@@ -1,0 +1,26 @@
+{
+  "name": "diagram-desk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "diagram-desk": "bin/diagram-desk.mjs"
+  },
+  "scripts": {
+    "start": "node bin/diagram-desk.mjs serve",
+    "test": "node --test",
+    "build:viewport": "esbuild scripts/viewport-vendor.mjs --bundle --format=esm --minify --outfile=public/lib/viewport.mjs"
+  },
+  "dependencies": {
+    "d3-selection": "3.0.0",
+    "d3-zoom": "3.0.0",
+    "mermaid": "12.2.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "jsdom": "26.1.0"
+  }
+}

@@ -1,0 +1,10 @@
+flowchart LR
+  Human[人間] --> Services
+  subgraph Services[アプリケーション]
+    direction TB
+    CLI[CLI] --> Desk[Desk]
+    UI[Web UI] --> Desk
+    Desk --> Catalog[Diagram Catalog]
+  end
+  Services@{ view: collapsed }
+  Services --> Files[(Repository)]

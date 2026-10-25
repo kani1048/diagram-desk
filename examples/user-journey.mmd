@@ -1,0 +1,13 @@
+sequenceDiagram
+  actor Human as 人間
+  participant UI as Web UI
+  participant App as Desk
+  participant FS as Repository
+  Human->>UI: リポジトリを選択
+  UI->>App: listDiagrams(repositoryId)
+  App->>FS: .mmd を探索・読み込み
+  FS-->>App: 図のソース
+  App-->>UI: 図のカタログ
+  UI-->>Human: サムネイル一覧
+  Human->>UI: 次の図へ
+  UI-->>Human: Mermaid プレビュー

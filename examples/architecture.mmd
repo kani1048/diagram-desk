@@ -1,0 +1,9 @@
+flowchart LR
+  Human[人間] --> Web[Web UI]
+  Agent[エージェント] --> CLI[CLI]
+  Web --> Desk[Application / Desk]
+  CLI --> Desk
+  Desk --> Registry[Repository Registry]
+  Desk --> Catalog[Diagram Catalog]
+  Registry --> JSON[(Local JSON)]
+  Catalog --> Git[(Git repositories)]

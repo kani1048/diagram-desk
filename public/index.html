@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Diagram Desk</title><link rel="stylesheet" href="/style.css"></head>
+<body><header class="app-header"><a class="brand" href="/workspaces">◈ Diagram Desk</a><span>LOCAL FIRST · DIAGRAMS</span></header>
+<main><nav id="breadcrumbs" aria-label="パンくず"></nav><header class="page-header"><div><p id="eyebrow" class="eyebrow"></p><h1 id="title">ワークスペース</h1><p id="description"></p></div><div class="actions"><button id="refresh">再読み込み</button><button id="code" hidden>ソース</button></div></header>
+<p id="error" role="alert" hidden></p>
+<section id="workspaces" aria-label="ワークスペース一覧"><div id="workspace-list" class="grid"></div><p id="workspace-empty" hidden>ワークスペースを登録してください。<br><code>diagram-desk repo add /path/to/repository</code></p></section>
+<section id="diagrams" aria-label="図の一覧" hidden><div class="catalog-bar"><input id="search" placeholder="図を検索…" aria-label="図を検索"><span id="count"></span></div><div id="diagram-list" class="grid"></div><p id="diagram-empty" hidden>図がありません。</p></section>
+<section id="detail" aria-label="図の詳細" hidden>
+<div class="toolbar"><span id="kind"></span><span id="position"></span><span id="save-state" role="status"></span><div><button id="prev" aria-label="前の図">←</button><button id="next" aria-label="次の図">→</button><button id="save">保存</button></div></div>
+<div id="canvas"><div id="graph"></div><aside id="selection-detail" aria-label="選択要素の詳細" hidden></aside><button id="show-code">&lt;/&gt; コードを表示</button>
+<aside id="code-panel" hidden><div class="panel-head"><strong>Code</strong><button id="close-code" aria-label="コードを畳む">×</button></div><div class="editor-wrap"><pre id="highlight" aria-hidden="true"></pre><textarea id="source" aria-label="Mermaidコード" spellcheck="false"></textarea></div><div id="conflict" hidden><p>外部変更があります。コピーして比較するか、最新版を読み込んでください。</p><button id="reload-source">最新版を読み込む</button><details><summary>外部のソース</summary><pre id="external-source"></pre></details></div></aside>
+<div id="zoom-controls"><button id="zoom-out" aria-label="縮小">−</button><span id="zoom-level">100%</span><button id="zoom-in" aria-label="拡大">＋</button><button id="zoom-reset" aria-label="図を全体表示">↺</button></div><pre id="viewer-error" role="alert" hidden></pre></div></section>
+</main><script type="module" src="/app.js"></script></body></html>

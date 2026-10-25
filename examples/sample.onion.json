@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "0.1",
+  "layers": [
+    {
+      "id": "domain",
+      "label": "Domain",
+      "order": 0
+    },
+    {
+      "id": "application",
+      "label": "Application",
+      "order": 1
+    },
+    {
+      "id": "adapters",
+      "label": "Adapters",
+      "order": 2
+    }
+  ],
+  "components": [
+    {
+      "id": "user",
+      "label": "User",
+      "layerId": "domain",
+      "kind": "entity",
+      "groupId": "user"
+    },
+    {
+      "id": "create-user",
+      "label": "CreateUser",
+      "layerId": "application",
+      "kind": "usecase",
+      "groupId": "user"
+    },
+    {
+      "id": "user-repository-port",
+      "label": "UserRepository",
+      "layerId": "application",
+      "kind": "port",
+      "socket": "spi",
+      "groupId": "user"
+    },
+    {
+      "id": "user-api",
+      "label": "User API",
+      "layerId": "application",
+      "kind": "port",
+      "socket": "api",
+      "groupId": "user"
+    },
+    {
+      "id": "sql-user-repository",
+      "label": "SqlUserRepository",
+      "layerId": "adapters",
+      "kind": "adapter",
+      "groupId": "user"
+    },
+    {
+      "id": "rest-controller",
+      "label": "REST",
+      "layerId": "adapters",
+      "kind": "adapter",
+      "groupId": "user"
+    }
+  ],
+  "relations": [
+    {
+      "from": "rest-controller",
+      "to": "user-api",
+      "kind": "depends-on",
+      "source": "declared"
+    },
+    {
+      "from": "user-api",
+      "to": "create-user",
+      "kind": "uses-port",
+      "source": "declared"
+    },
+    {
+      "from": "create-user",
+      "to": "user",
+      "kind": "depends-on",
+      "source": "declared"
+    },
+    {
+      "from": "create-user",
+      "to": "user-repository-port",
+      "kind": "uses-port",
+      "source": "declared"
+    },
+    {
+      "from": "sql-user-repository",
+      "to": "user-repository-port",
+      "kind": "implements-port",
+      "source": "declared"
+    }
+  ]
+}

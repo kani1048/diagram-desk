@@ -1,0 +1,13 @@
+classDiagram
+  class Repository {
+    id
+    name
+    path
+  }
+  class Diagram {
+    path
+    name
+    kind
+    source
+  }
+  Repository "1" --> "*" Diagram : contains
