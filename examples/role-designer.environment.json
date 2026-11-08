@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "title": "人事も同列：並列ロールと専用DinDの設計案",
-  "notes": "合成サンプル。共通SBX内のruntime Dockerに、人事・実装・レビューを並列配置し、各ロールが専用DinDを持つ。並列起動・権限・資源・マウントの隔離は未検証。",
+  "title": "人事も同列：実行基盤のDinDで並列ロールを起動",
+  "notes": "合成サンプル。共通SBX内のruntime DockerがDinDで人事・実装・レビューの作業コンテナを並列起動する。各ロールはユーザー構成と作業領域を持つ。並列起動・資源・マウントは未検証。",
   "nodes": [
     {
       "id": "host",
@@ -32,9 +32,9 @@
       "id": "runtime-docker",
       "kind": "daemon",
       "parent": "runtime",
-      "label": "実行基盤のDocker daemon",
+      "label": "実行基盤のDinD",
       "status": "proposed",
-      "notes": "ロールコンテナの起動専用。ホストsocketの共有は想定しない。"
+      "notes": "ロール用コンテナを並列起動する実行基盤のdaemon。各ロールへsocketを共有するかどうかは別の設計事項で、ここでは接続を付与しない。"
     },
     {
       "id": "people-container",
@@ -45,7 +45,7 @@
       "refs": [
         "roles/people/compose.yaml"
       ],
-      "notes": "専用のユーザー構成・作業領域・DinD daemonを持つ。並列実行時のCPU/メモリ・権限・通信は実証して確定。"
+      "notes": "ユーザー構成と作業領域を持つロール用コンテナ。ロール内にDocker daemonを常設しない。Docker操作が必要な場合の接続方法は未決定。"
     },
     {
       "id": "people",
@@ -54,14 +54,6 @@
       "label": "人事",
       "status": "proposed",
       "notes": "ロールのユーザー構成とDocker作業場・検証計画を作成する。自分も他と同じロールコンテナで働く。"
-    },
-    {
-      "id": "people-docker",
-      "kind": "daemon",
-      "parent": "people-container",
-      "label": "人事専用DinD",
-      "status": "proposed",
-      "notes": "ロール内のビルドとテストに使用する専用daemon。ソケット・状態・イメージを他のロールと共有しない設計案。"
     },
     {
       "id": "people-config",
@@ -84,7 +76,7 @@
       "refs": [
         "roles/builder/compose.yaml"
       ],
-      "notes": "専用のユーザー構成・作業領域・DinD daemonを持つ。並列実行時のCPU/メモリ・権限・通信は実証して確定。"
+      "notes": "ユーザー構成と作業領域を持つロール用コンテナ。ロール内にDocker daemonを常設しない。Docker操作が必要な場合の接続方法は未決定。"
     },
     {
       "id": "builder",
@@ -92,15 +84,7 @@
       "parent": "builder-container",
       "label": "実装担当",
       "status": "proposed",
-      "notes": "割り当てられた案件を実装し、専用Dockerでビルドと検証を行う。"
-    },
-    {
-      "id": "builder-docker",
-      "kind": "daemon",
-      "parent": "builder-container",
-      "label": "実装担当専用DinD",
-      "status": "proposed",
-      "notes": "ロール内のビルドとテストに使用する専用daemon。ソケット・状態・イメージを他のロールと共有しない設計案。"
+      "notes": "割り当てられた案件を実装・検証する。Docker操作が必要な場合の接続方法は未決定。"
     },
     {
       "id": "builder-config",
@@ -123,7 +107,7 @@
       "refs": [
         "roles/reviewer/compose.yaml"
       ],
-      "notes": "専用のユーザー構成・作業領域・DinD daemonを持つ。並列実行時のCPU/メモリ・権限・通信は実証して確定。"
+      "notes": "ユーザー構成と作業領域を持つロール用コンテナ。ロール内にDocker daemonを常設しない。Docker操作が必要な場合の接続方法は未決定。"
     },
     {
       "id": "reviewer",
@@ -132,14 +116,6 @@
       "label": "レビュー担当",
       "status": "proposed",
       "notes": "対象のコピーを独立して検証し、根拠のあるレビューを返す。"
-    },
-    {
-      "id": "reviewer-docker",
-      "kind": "daemon",
-      "parent": "reviewer-container",
-      "label": "レビュー担当専用DinD",
-      "status": "proposed",
-      "notes": "ロール内のビルドとテストに使用する専用daemon。ソケット・状態・イメージを他のロールと共有しない設計案。"
     },
     {
       "id": "reviewer-config",
@@ -183,14 +159,6 @@
       "status": "proposed"
     },
     {
-      "id": "people-build",
-      "kind": "docker",
-      "from": "people",
-      "to": "people-docker",
-      "label": "専用daemonで構築・検証",
-      "status": "proposed"
-    },
-    {
       "id": "builder-launch",
       "kind": "docker",
       "from": "runtime-docker",
@@ -207,14 +175,6 @@
       "status": "proposed"
     },
     {
-      "id": "builder-build",
-      "kind": "docker",
-      "from": "builder",
-      "to": "builder-docker",
-      "label": "専用daemonで構築・検証",
-      "status": "proposed"
-    },
-    {
       "id": "reviewer-launch",
       "kind": "docker",
       "from": "runtime-docker",
@@ -228,14 +188,6 @@
       "from": "reviewer",
       "to": "reviewer-config",
       "label": "役割別の設定を利用",
-      "status": "proposed"
-    },
-    {
-      "id": "reviewer-build",
-      "kind": "docker",
-      "from": "reviewer",
-      "to": "reviewer-docker",
-      "label": "専用daemonで構築・検証",
       "status": "proposed"
     },
     {

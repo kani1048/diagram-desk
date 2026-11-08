@@ -47,3 +47,7 @@ Remove dedicated DinD daemons from individual role containers. Keep the runtime
 Docker daemon that creates parallel role workspaces. Do not implicitly give roles
 access to that daemon; how roles request Docker operations remains undecided.
 Validate the revised sample and refresh the preview. No runtime provisioning.
+
+Simplification completed: only the runtime daemon remains in the current
+sample (14 nodes, 8 links). Model/layout validation passed. No application
+logic changed; prior 27-test result remains the baseline for the renderer.
