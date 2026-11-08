@@ -61,3 +61,13 @@ SBX. Validate the sample and refresh the preview; no provisioning changes.
 Assistant involvement completed: participants are outside the planned runtime;
 confirmed editing/testing/PR relationships carry evidence, while bootstrap work
 remains proposed. Updated sample validates (18 nodes / 13 links); 27 tests pass.
+
+## Follow-up: orchestration and portable role definitions
+Update the sample and explanatory docs only: this conversation's Codex is the
+proposed overall orchestrator, assigning work, evaluating role outcomes and
+requesting measured tuning from HR. Runtime owns execution; Customizer supplies
+standard CODEX_HOME only. Mounted repositories and GitHub issues/PRs preserve
+pushed work. Uncommitted/unpushed work is deliberately not migrated; non-Git
+persistent data management is outside this architecture. Authentication is
+reconfigured using a checklist/guide. No live orchestration is implemented.
+Validate the sample with existing tests, build the preview and inspect it.
