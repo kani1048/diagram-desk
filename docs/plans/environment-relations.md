@@ -77,3 +77,9 @@ role evaluation, HR tuning proposals and version comparison/adoption. It adds
 CODEX_HOME-only exchange, independent project workspaces and issue/PR records.
 Migration exclusions and fresh-auth setup are explicit. Node 22 suite: 27 passed.
 No role execution, evaluation service or backup system was introduced.
+
+## Follow-up: three-context triangle layout
+For three Onion contexts, use triangle vertices rather than a center hub and two
+opposite satellites. Preserve one/two-context row and four-plus hub behavior.
+Check unequal radii clearance, non-collinearity, determinism and full rendering.
+Also align the environment example with Codex owning role definition/revision.
