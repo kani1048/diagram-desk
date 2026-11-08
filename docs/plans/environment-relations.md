@@ -51,3 +51,9 @@ Validate the revised sample and refresh the preview. No runtime provisioning.
 Simplification completed: only the runtime daemon remains in the current
 sample (14 nodes, 8 links). Model/layout validation passed. No application
 logic changed; prior 27-test result remains the baseline for the renderer.
+
+## Follow-up: current assistant involvement
+Add the user and this conversation's Codex as participants outside the proposed
+runtime. Show actual diagram/code/PR work separately from proposed HR/bootstrap
+and runtime work. No claim of existing role orchestration or deployment inside
+SBX. Validate the sample and refresh the preview; no provisioning changes.
