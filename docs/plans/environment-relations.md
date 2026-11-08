@@ -57,3 +57,7 @@ Add the user and this conversation's Codex as participants outside the proposed
 runtime. Show actual diagram/code/PR work separately from proposed HR/bootstrap
 and runtime work. No claim of existing role orchestration or deployment inside
 SBX. Validate the sample and refresh the preview; no provisioning changes.
+
+Assistant involvement completed: participants are outside the planned runtime;
+confirmed editing/testing/PR relationships carry evidence, while bootstrap work
+remains proposed. Updated sample validates (18 nodes / 13 links); 27 tests pass.

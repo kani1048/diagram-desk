@@ -1,4 +1,4 @@
-export const NODE_KINDS = Object.freeze({ host: 'ホスト', sbx: 'SBX境界', container: 'コンテナ', daemon: 'Docker daemon', role: 'ロール', config: 'ユーザー構成', workspace: '作業データ', service: '外部サービス' });
+export const NODE_KINDS = Object.freeze({ participant: '参加者', host: 'ホスト', sbx: 'SBX境界', container: 'コンテナ', daemon: 'Docker daemon', role: 'ロール', config: 'ユーザー構成', workspace: '作業データ', service: '外部サービス' });
 export const LINK_KINDS = Object.freeze({ config: '設定参照', mount: 'マウント', docker: 'Docker操作', network: '通信', manages: '管理' });
 export const STATUSES = Object.freeze({ proposed: '設計案', confirmed: '確認済み', unknown: '未確認' });
 const own = (map, key) => Object.hasOwn(map, key);

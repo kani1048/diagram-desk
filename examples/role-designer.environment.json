@@ -1,8 +1,24 @@
 {
   "version": 1,
   "title": "人事も同列：実行基盤のDinDで並列ロールを起動",
-  "notes": "合成サンプル。共通SBX内のruntime DockerがDinDで人事・実装・レビューの作業コンテナを並列起動する。各ロールはユーザー構成と作業領域を持つ。並列起動・資源・マウントは未検証。",
+  "notes": "合成サンプル。共通SBX内のruntime DockerがDinDで人事・実装・レビューの作業コンテナを並列起動する。各ロールはユーザー構成と作業領域を持つ。並列起動・資源・マウントは未検証。 この会話のCodexは構成づくりを支援中。参加者は実行場所ではなく関与を示す。実施済みの図・コード・PR作業を実線、将来の人事・runtime整備を破線で区別。",
   "nodes": [
+    {
+      "id": "user",
+      "kind": "participant",
+      "label": "あなた：方針・依頼・判断",
+      "status": "confirmed",
+      "evidence": "2026-11-08 この会話で構成の方針と変更を依頼。",
+      "notes": "作りたい環境とロールの責任を決め、Codexと相談しながら構成を育てる。図上の配置は関与を示し、PC上の実行場所を示すものではない。"
+    },
+    {
+      "id": "current-codex",
+      "kind": "participant",
+      "label": "この会話のCodex：構成づくり支援",
+      "status": "confirmed",
+      "evidence": "2026-11-08 この会話で構成を相談し、diagram-deskの関係図・コード・検証・PR #2を更新。",
+      "notes": "この会話で設計相談を受け、構成案・ソース・関係図を編集し、テスト・ビルド・プレビュー・PR提出を行う。提案中のSBXや人事コンテナにはまだ配置されていない。人事や実装担当を自動起動しているわけではない。"
+    },
     {
       "id": "host",
       "kind": "host",
@@ -139,6 +155,31 @@
         "roles/"
       ],
       "notes": "人事が定義を提案し、検証された版をruntimeが利用する。人事自身がホストのdaemonや起動権限を自由に変更するものではない。"
+    },
+    {
+      "id": "design-work",
+      "kind": "workspace",
+      "parent": "host",
+      "label": "構成づくりの作業：diagram-desk",
+      "status": "confirmed",
+      "evidence": "2026-11-08 この会話で構成を相談し、diagram-deskの関係図・コード・検証・PR #2を更新。",
+      "refs": [
+        "examples/role-designer.environment.json",
+        "public/renderers/environment.mjs",
+        "docs/environment-relations.md"
+      ],
+      "notes": "現在実際に編集・検証しているソース。ロール定義カタログは将来の構成案として別に示す。"
+    },
+    {
+      "id": "github-pr",
+      "kind": "service",
+      "label": "GitHub：diagram-desk PR #2",
+      "status": "confirmed",
+      "evidence": "2026-11-08 GitHub App認証でPR #2を作成し、検証済みの差分をpush。",
+      "refs": [
+        "https://github.com/kani1048/diagram-desk/pull/2"
+      ],
+      "notes": "CI・中央レビューの成功は別途確認する。自動マージは行わない。"
     }
   ],
   "links": [
@@ -209,6 +250,51 @@
       "target": "/opt/role-catalog",
       "label": "採用済み構成を利用",
       "status": "proposed"
+    },
+    {
+      "id": "conversation",
+      "from": "user",
+      "to": "current-codex",
+      "kind": "manages",
+      "label": "設計相談・依頼・フィードバック",
+      "status": "confirmed",
+      "evidence": "2026-11-08 この会話で方針と修正を相談。"
+    },
+    {
+      "id": "codex-work",
+      "from": "current-codex",
+      "to": "design-work",
+      "kind": "manages",
+      "label": "構成図・コードを更新、検証",
+      "status": "confirmed",
+      "evidence": "2026-11-08 この会話で構成を相談し、diagram-deskの関係図・コード・検証・PR #2を更新。"
+    },
+    {
+      "id": "codex-pr",
+      "from": "current-codex",
+      "to": "github-pr",
+      "kind": "manages",
+      "label": "差分をPRとして提出・報告",
+      "status": "confirmed",
+      "evidence": "2026-11-08 PR #2へコミットをpushしてレビュー可能にした。"
+    },
+    {
+      "id": "codex-hr-bootstrap",
+      "from": "current-codex",
+      "to": "people",
+      "kind": "manages",
+      "label": "人事の初期構成を一緒に用意",
+      "status": "proposed",
+      "notes": "人事ロールの指示・スキル・作業場を設計する段階。稼働中の人事エージェントへの委譲ではない。"
+    },
+    {
+      "id": "codex-runtime-bootstrap",
+      "from": "current-codex",
+      "to": "runtime",
+      "kind": "manages",
+      "label": "実行基盤の実装・検証を支援",
+      "status": "proposed",
+      "notes": "現時点は関係図の設計案。SBX/DinDの起動や復元は今後の実証対象。"
     }
   ]
 }

@@ -30,7 +30,7 @@ Customizerの出力、Dockerfile、compose.yaml、SBXの環境定義に置きま
 }
 ```
 
-- node kind: `host`, `sbx`, `container`, `daemon`, `role`, `config`, `workspace`, `service`。
+- node kind: `participant`, `host`, `sbx`, `container`, `daemon`, `role`, `config`, `workspace`, `service`。
 - parent: 所属境界のID。包含境界にできるのはhost / sbx / container。
 - link kind: `config`, `mount`, `docker`, `network`, `manages`。
 - 矢印はfromからto。mountの場合は利用側→共有元、targetは利用側のマウント先。
@@ -53,3 +53,10 @@ EnterまたはSpaceでも選択できます。図のズーム・移動・JSON編
 
 Docker/SBXの自動検出、標準設定ファイルからの自動生成、Docker実行、認証情報の収集は
 初版の対象外です。Docker daemonやソケットのマウント、稼働状態の変更は行いません。
+
+## この会話のCodexの関与
+
+サンプルの「あなた」と「この会話のCodex」は参加者です。実行場所や稼働中コンテナとして描きません。
+Codexによる実施済みの図・ソース編集、検証、PR提出を確認記録付きの実線で示します。
+将来の人事ロールの初期構成とruntime実装への支援は設計案の破線です。
+人事・他ロールの自動起動や、現在のCodexが共通SBX内に配置済みという意味ではありません。

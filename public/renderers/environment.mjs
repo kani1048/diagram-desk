@@ -1,5 +1,5 @@
 import { parseEnvironment, layoutEnvironment, selectionFor, escapeHtml as e, NODE_KINDS, LINK_KINDS, STATUSES } from './environment-model.mjs';
-const colors = { host: '#e9edf4', sbx: '#edf3fc', container: '#eaf4ef', daemon: '#f8eee4', role: '#f3ecfa', config: '#fff5d9', workspace: '#e8f5f5', service: '#f2f2f2' };
+const colors = { participant: '#f4e9df', host: '#e9edf4', sbx: '#edf3fc', container: '#eaf4ef', daemon: '#f8eee4', role: '#f3ecfa', config: '#fff5d9', workspace: '#e8f5f5', service: '#f2f2f2' };
 const short = (value, length = 24) => Array.from(value).length > length ? Array.from(value).slice(0, length - 1).join('') + '…' : value;
 function lines(value, width) {
   const rows = ['']; let used = 0;
