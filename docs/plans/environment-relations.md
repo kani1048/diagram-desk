@@ -41,3 +41,9 @@ This changes diagrams only; no daemon or container privileges are provisioned.
 Follow-up completed: HR, implementation and review are peers under runtime,
 with per-role user configuration and DinD. Both examples validate; all 27 tests
 pass under Node 22, the Docker image builds, and browser selection is verified.
+
+## Follow-up: simplify role workspaces
+Remove dedicated DinD daemons from individual role containers. Keep the runtime
+Docker daemon that creates parallel role workspaces. Do not implicitly give roles
+access to that daemon; how roles request Docker operations remains undecided.
+Validate the revised sample and refresh the preview. No runtime provisioning.
