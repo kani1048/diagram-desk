@@ -83,3 +83,8 @@ For three Onion contexts, use triangle vertices rather than a center hub and two
 opposite satellites. Preserve one/two-context row and four-plus hub behavior.
 Check unequal radii clearance, non-collinearity, determinism and full rendering.
 Also align the environment example with Codex owning role definition/revision.
+
+Completed: three-context layouts use triangle vertices with pairwise radius
+clearance; one/two rows and four-plus hub behavior are covered by regression
+checks. All 28 Node 22 tests pass. The current sample now shows per-role SBX and
+Codex-owned role revisions; agent-runtime ports are documented as Presentation-owned.

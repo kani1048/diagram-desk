@@ -1,400 +1,276 @@
 {
   "version": 1,
-  "title": "オーケストレーター：並列ロールの評価と改善",
-  "notes": "設計案。Codexが全体を調整し、人事・実装・レビューを評価して改善する。runtimeが共通SBX内のDinDでロールを並列起動する既存案を維持。Customizerとの契約は生成済みCODEX_HOMEのみ。移行対象は定義とpush済みリポジトリ・issue/PR。未commit・未pushの作業は移行しない。DB等の永続データは別手段で扱い、本構成の責務に含めない。認証は移行先で再設定。実際の起動・評価自動化は未実装。",
+  "title": "ロール別SBX：独立した定義と実行インスタンス",
+  "notes": "全て設計案・未実証。同じロールの複数instanceを許容。共通SBX・共通DinDなし。SBX専用Engineからロールimageを起動する接続方式はspike対象。認証は移行先で再設定。未commit・未push、会話履歴、DB等の永続データは移行対象外。",
   "nodes": [
-    {
-      "id": "user",
-      "kind": "participant",
-      "label": "あなた：方針・依頼・判断",
-      "status": "confirmed",
-      "evidence": "2026-11-08 この会話で構成の方針と変更を依頼。",
-      "notes": "作りたい環境とロールの責任を決め、Codexと相談しながら構成を育てる。図上の配置は関与を示し、PC上の実行場所を示すものではない。"
-    },
-    {
-      "id": "current-codex",
-      "kind": "participant",
-      "label": "Codex：全体オーケストレーター",
-      "status": "confirmed",
-      "evidence": "2026-11-08 この会話で構成を相談し、diagram-deskの関係図・コード・検証・PR #2を更新。",
-      "notes": "現在はこの会話で構成・図・検証・PRを扱う。将来は目的をタスクへ分解し、各ロールへ割当・進捗調整・成果評価を行う。品質、手戻り、所要時間、実行コストをタスクと設定バージョンに紐付けて比較し、人事へ改善を依頼する。人事自身も評価対象。チューニングは変更前後を同等の課題で比較し、採用・差戻しを判断する。実行基盤への配置と自動評価は未実装。"
-    },
     {
       "id": "host",
       "kind": "host",
-      "label": "PC / WSL",
+      "label": "移行先PC：固有設定と認証",
       "status": "proposed"
     },
     {
-      "id": "sandbox",
+      "id": "orchestrator",
+      "kind": "participant",
+      "label": "Codex：定義・改訂・調整・評価",
+      "status": "proposed",
+      "notes": "現在の会話からの関与。専用SBXへの配置を意味しない。"
+    },
+    {
+      "id": "manager",
+      "kind": "service",
+      "parent": "host",
+      "label": "agent-runtime：起動管理CLI",
+      "status": "proposed"
+    },
+    {
+      "id": "catalog",
+      "kind": "service",
+      "label": "Git：採用済みロールカタログ",
+      "status": "proposed"
+    },
+    {
+      "id": "customizer",
+      "kind": "service",
+      "label": "Customizer：標準設定を生成",
+      "status": "proposed"
+    },
+    {
+      "id": "registry",
+      "kind": "service",
+      "label": "OCI：固定digestのimage",
+      "status": "proposed"
+    },
+    {
+      "id": "github",
+      "kind": "service",
+      "label": "案件Git / issue / PR / 評価",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-sbx",
       "kind": "sbx",
       "parent": "host",
-      "label": "共通SBX：エージェント実行基盤",
-      "status": "proposed",
-      "notes": "VM境界は共通SBX。ロール間はコンテナ境界で、独立VMではない。"
+      "label": "実装専用SBX：instance単位",
+      "status": "proposed"
     },
     {
-      "id": "runtime",
-      "kind": "container",
-      "parent": "sandbox",
-      "label": "runtime Docker：ロールの起動・再接続",
-      "status": "proposed",
-      "refs": [
-        "runtime/compose.yaml"
-      ],
-      "notes": "人事を含む全ロールを同列の作業コンテナとして起動する。"
-    },
-    {
-      "id": "runtime-docker",
+      "id": "builder-engine",
       "kind": "daemon",
-      "parent": "runtime",
-      "label": "実行基盤のDinD",
-      "status": "proposed",
-      "notes": "ロール用コンテナを並列起動する実行基盤のdaemon。各ロールへsocketを共有するかどうかは別の設計事項で、ここでは接続を付与しない。"
-    },
-    {
-      "id": "people-container",
-      "kind": "container",
-      "parent": "runtime",
-      "label": "人事のロール環境",
-      "status": "proposed",
-      "refs": [
-        "roles/people/compose.yaml"
-      ],
-      "notes": "ユーザー構成と作業領域を持つロール用コンテナ。ロール内にDocker daemonを常設しない。Docker操作が必要な場合の接続方法は未決定。"
-    },
-    {
-      "id": "people",
-      "kind": "role",
-      "parent": "people-container",
-      "label": "人事",
-      "status": "proposed",
-      "notes": "オーケストレーターの評価と改善依頼を受け、ロールの生成済みCODEX_HOME、Docker作業場、検証計画、認証設定項目と導入ガイドを提案・改訂する。自身も他と同列のロール。DBバックアップや未push作業の移行は担当しない。"
-    },
-    {
-      "id": "people-config",
-      "kind": "config",
-      "parent": "people-container",
-      "label": "人事：生成済みCODEX_HOME",
-      "status": "proposed",
-      "refs": [
-        "roles/people/agent-config/config.toml",
-        "roles/people/agent-config/AGENTS.md",
-        "roles/people/agent-config/skills/"
-      ],
-      "notes": "Customizerが生成する標準ファイルのみを利用。実行側はCustomizerの編集用JSONや内部依存を解釈しない。"
+      "parent": "builder-sbx",
+      "label": "SBX専用Docker Engine",
+      "status": "proposed"
     },
     {
       "id": "builder-container",
       "kind": "container",
-      "parent": "runtime",
-      "label": "実装担当のロール環境",
-      "status": "proposed",
-      "refs": [
-        "roles/builder/compose.yaml"
-      ],
-      "notes": "ユーザー構成と作業領域を持つロール用コンテナ。ロール内にDocker daemonを常設しない。Docker操作が必要な場合の接続方法は未決定。"
+      "parent": "builder-sbx",
+      "label": "実装：ロールimage",
+      "status": "proposed"
     },
     {
       "id": "builder",
       "kind": "role",
       "parent": "builder-container",
-      "label": "実装担当",
-      "status": "proposed",
-      "notes": "割り当てられた案件を実装・検証する。Docker操作が必要な場合の接続方法は未決定。"
+      "label": "実装エージェント",
+      "status": "proposed"
     },
     {
       "id": "builder-config",
       "kind": "config",
       "parent": "builder-container",
-      "label": "実装担当：生成済みCODEX_HOME",
-      "status": "proposed",
-      "refs": [
-        "roles/builder/agent-config/config.toml",
-        "roles/builder/agent-config/AGENTS.md",
-        "roles/builder/agent-config/skills/"
-      ],
-      "notes": "Customizerが生成する標準ファイルのみを利用。実行側はCustomizerの編集用JSONや内部依存を解釈しない。"
+      "label": "専用CODEX_HOMEコピー",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-workspace",
+      "kind": "workspace",
+      "parent": "host",
+      "label": "実装：独立Git clone",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-sbx",
+      "kind": "sbx",
+      "parent": "host",
+      "label": "レビュー専用SBX：instance単位",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-engine",
+      "kind": "daemon",
+      "parent": "reviewer-sbx",
+      "label": "SBX専用Docker Engine",
+      "status": "proposed"
     },
     {
       "id": "reviewer-container",
       "kind": "container",
-      "parent": "runtime",
-      "label": "レビュー担当のロール環境",
-      "status": "proposed",
-      "refs": [
-        "roles/reviewer/compose.yaml"
-      ],
-      "notes": "ユーザー構成と作業領域を持つロール用コンテナ。ロール内にDocker daemonを常設しない。Docker操作が必要な場合の接続方法は未決定。"
+      "parent": "reviewer-sbx",
+      "label": "レビュー：ロールimage",
+      "status": "proposed"
     },
     {
       "id": "reviewer",
       "kind": "role",
       "parent": "reviewer-container",
-      "label": "レビュー担当",
-      "status": "proposed",
-      "notes": "対象のコピーを独立して検証し、根拠のあるレビューを返す。"
+      "label": "レビューエージェント",
+      "status": "proposed"
     },
     {
       "id": "reviewer-config",
       "kind": "config",
       "parent": "reviewer-container",
-      "label": "レビュー担当：生成済みCODEX_HOME",
-      "status": "proposed",
-      "refs": [
-        "roles/reviewer/agent-config/config.toml",
-        "roles/reviewer/agent-config/AGENTS.md",
-        "roles/reviewer/agent-config/skills/"
-      ],
-      "notes": "Customizerが生成する標準ファイルのみを利用。実行側はCustomizerの編集用JSONや内部依存を解釈しない。"
+      "label": "専用CODEX_HOMEコピー",
+      "status": "proposed"
     },
     {
-      "id": "catalog",
+      "id": "reviewer-workspace",
       "kind": "workspace",
       "parent": "host",
-      "label": "ロール定義カタログ",
-      "status": "proposed",
-      "refs": [
-        "roles/"
-      ],
-      "notes": "Git管理するロールと作業場の定義。生成済みCODEX_HOMEとDocker/SBX構成、認証設定項目・導入ガイドを保持。編集元はCustomizer側の責務。検証・採用したバージョンをruntimeが利用する。秘密情報は保存しない。"
-    },
-    {
-      "id": "design-work",
-      "kind": "workspace",
-      "parent": "host",
-      "label": "構成づくりの作業：diagram-desk",
-      "status": "confirmed",
-      "evidence": "2026-11-08 この会話で構成を相談し、diagram-deskの関係図・コード・検証・PR #2を更新。",
-      "refs": [
-        "examples/role-designer.environment.json",
-        "public/renderers/environment.mjs",
-        "docs/environment-relations.md"
-      ],
-      "notes": "現在実際に編集・検証しているソース。ロール定義カタログは将来の構成案として別に示す。"
-    },
-    {
-      "id": "github-pr",
-      "kind": "service",
-      "label": "GitHub：diagram-desk PR #2",
-      "status": "confirmed",
-      "evidence": "2026-11-08 GitHub App認証でPR #2を作成し、検証済みの差分をpush。",
-      "refs": [
-        "https://github.com/kani1048/diagram-desk/pull/2"
-      ],
-      "notes": "CI・中央レビューの成功は別途確認する。自動マージは行わない。"
-    },
-    {
-      "id": "customizer",
-      "kind": "service",
-      "label": "Customizer：CODEX_HOME生成",
-      "status": "proposed",
-      "notes": "編集元を管理し、標準CODEX_HOMEを出力する。runtimeはCustomizer本体に依存しない。"
-    },
-    {
-      "id": "project-repos",
-      "kind": "workspace",
-      "parent": "host",
-      "label": "案件Gitリポジトリ：ロール別作業コピー",
-      "status": "proposed",
-      "notes": "同じ案件でもロールごとに独立したclone/worktreeを使う。コード・成果物はcommitしてpushする。未commit・未pushの変更は移行対象外。DB等の永続データ管理は別手段。"
-    },
-    {
-      "id": "work-records",
-      "kind": "service",
-      "label": "GitHub：案件issue / PR・評価記録",
-      "status": "proposed",
-      "notes": "作業指示、成果、判断、再開手順、評価根拠と設定バージョンを各案件のissue/PRへ記録する。評価は未実装。秘密情報は記録しない。"
+      "label": "レビュー：独立Git clone",
+      "status": "proposed"
     }
   ],
   "links": [
     {
-      "id": "people-launch",
-      "kind": "docker",
-      "from": "runtime-docker",
-      "to": "people-container",
-      "label": "同列の作業場として起動",
+      "id": "user-plan",
+      "from": "orchestrator",
+      "to": "manager",
+      "label": "割当・起動・停止を依頼",
+      "kind": "manages",
       "status": "proposed"
     },
     {
-      "id": "people-config-use",
+      "id": "read-catalog",
+      "from": "manager",
+      "to": "catalog",
+      "label": "不変commitを取得",
       "kind": "config",
-      "from": "people",
-      "to": "people-config",
-      "label": "役割別の設定を利用",
+      "status": "proposed"
+    },
+    {
+      "id": "generate",
+      "from": "customizer",
+      "to": "catalog",
+      "label": "生成済みCODEX_HOMEのみ",
+      "kind": "config",
+      "status": "proposed"
+    },
+    {
+      "id": "evaluate",
+      "from": "orchestrator",
+      "to": "github",
+      "label": "成果評価・版比較・採否を記録",
+      "kind": "manages",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-create",
+      "from": "manager",
+      "to": "builder-sbx",
+      "label": "専用環境を作成・接続",
+      "kind": "manages",
       "status": "proposed"
     },
     {
       "id": "builder-launch",
-      "kind": "docker",
-      "from": "runtime-docker",
+      "from": "builder-engine",
       "to": "builder-container",
-      "label": "同列の作業場として起動",
+      "label": "固定imageで起動（実証対象）",
+      "kind": "docker",
       "status": "proposed"
+    },
+    {
+      "id": "builder-image",
+      "from": "builder-engine",
+      "to": "registry",
+      "label": "digestで取得",
+      "kind": "network",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-mount",
+      "from": "builder-container",
+      "to": "builder-workspace",
+      "label": "daemon側パスからmount",
+      "kind": "mount",
+      "status": "proposed",
+      "access": "rw",
+      "target": "/workspace"
     },
     {
       "id": "builder-config-use",
-      "kind": "config",
       "from": "builder",
       "to": "builder-config",
-      "label": "役割別の設定を利用",
-      "status": "proposed"
-    },
-    {
-      "id": "reviewer-launch",
-      "kind": "docker",
-      "from": "runtime-docker",
-      "to": "reviewer-container",
-      "label": "同列の作業場として起動",
-      "status": "proposed"
-    },
-    {
-      "id": "reviewer-config-use",
+      "label": "標準設定を利用",
       "kind": "config",
-      "from": "reviewer",
-      "to": "reviewer-config",
-      "label": "役割別の設定を利用",
-      "status": "proposed"
-    },
-    {
-      "id": "people-output",
-      "kind": "mount",
-      "from": "people-container",
-      "to": "catalog",
-      "access": "rw",
-      "target": "/workspace/roles",
-      "label": "ロールと作業場の定義を作成",
-      "status": "proposed"
-    },
-    {
-      "id": "runtime-catalog",
-      "kind": "mount",
-      "from": "runtime",
-      "to": "catalog",
-      "access": "ro",
-      "target": "/opt/role-catalog",
-      "label": "採用済み構成を利用",
-      "status": "proposed"
-    },
-    {
-      "id": "conversation",
-      "from": "user",
-      "to": "current-codex",
-      "kind": "manages",
-      "label": "設計相談・依頼・フィードバック",
-      "status": "confirmed",
-      "evidence": "2026-11-08 この会話で方針と修正を相談。"
-    },
-    {
-      "id": "codex-work",
-      "from": "current-codex",
-      "to": "design-work",
-      "kind": "manages",
-      "label": "構成図・コードを更新、検証",
-      "status": "confirmed",
-      "evidence": "2026-11-08 この会話で構成を相談し、diagram-deskの関係図・コード・検証・PR #2を更新。"
-    },
-    {
-      "id": "codex-pr",
-      "from": "current-codex",
-      "to": "github-pr",
-      "kind": "manages",
-      "label": "差分をPRとして提出・報告",
-      "status": "confirmed",
-      "evidence": "2026-11-08 PR #2へコミットをpushしてレビュー可能にした。"
-    },
-    {
-      "id": "codex-hr-bootstrap",
-      "from": "current-codex",
-      "to": "people",
-      "kind": "manages",
-      "label": "人事の評価・ロール改善依頼",
-      "status": "proposed",
-      "notes": "目的・評価根拠・改善仮説を渡す。人事が設定と作業場の改訂を提案し、比較検証後に採用する。"
-    },
-    {
-      "id": "codex-runtime-bootstrap",
-      "from": "current-codex",
-      "to": "runtime",
-      "kind": "manages",
-      "label": "実行基盤の実装・検証を支援",
-      "status": "proposed",
-      "notes": "現時点は関係図の設計案。SBX/DinDの起動や復元は今後の実証対象。"
-    },
-    {
-      "id": "customizer-output",
-      "kind": "config",
-      "from": "customizer",
-      "to": "catalog",
-      "label": "生成済みCODEX_HOMEのみ受渡し",
-      "status": "proposed"
-    },
-    {
-      "id": "codex-evaluation",
-      "kind": "manages",
-      "from": "current-codex",
-      "to": "work-records",
-      "label": "成果評価・比較結果・採否を記録",
-      "status": "proposed"
-    },
-    {
-      "id": "codex-assign-builder",
-      "kind": "manages",
-      "from": "current-codex",
-      "to": "builder",
-      "label": "仕事の割当・進捗調整・評価",
-      "status": "proposed"
-    },
-    {
-      "id": "codex-assign-reviewer",
-      "kind": "manages",
-      "from": "current-codex",
-      "to": "reviewer",
-      "label": "検証依頼・レビュー品質の評価",
-      "status": "proposed"
-    },
-    {
-      "id": "builder-repo",
-      "kind": "mount",
-      "from": "builder-container",
-      "to": "project-repos",
-      "access": "rw",
-      "target": "/workspace/project",
-      "label": "独立した案件作業コピー",
-      "status": "proposed"
-    },
-    {
-      "id": "reviewer-repo",
-      "kind": "mount",
-      "from": "reviewer-container",
-      "to": "project-repos",
-      "access": "rw",
-      "target": "/workspace/project",
-      "label": "独立した案件作業コピー",
-      "status": "proposed"
-    },
-    {
-      "id": "people-report",
-      "kind": "manages",
-      "from": "people",
-      "to": "work-records",
-      "label": "成果・検証根拠・引継ぎを記録",
       "status": "proposed"
     },
     {
       "id": "builder-report",
-      "kind": "manages",
       "from": "builder",
-      "to": "work-records",
-      "label": "成果・検証根拠・引継ぎを記録",
+      "to": "github",
+      "label": "成果をpush・根拠を記録",
+      "kind": "manages",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-create",
+      "from": "manager",
+      "to": "reviewer-sbx",
+      "label": "専用環境を作成・接続",
+      "kind": "manages",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-launch",
+      "from": "reviewer-engine",
+      "to": "reviewer-container",
+      "label": "固定imageで起動（実証対象）",
+      "kind": "docker",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-image",
+      "from": "reviewer-engine",
+      "to": "registry",
+      "label": "digestで取得",
+      "kind": "network",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-mount",
+      "from": "reviewer-container",
+      "to": "reviewer-workspace",
+      "label": "daemon側パスからmount",
+      "kind": "mount",
+      "status": "proposed",
+      "access": "rw",
+      "target": "/workspace"
+    },
+    {
+      "id": "reviewer-config-use",
+      "from": "reviewer",
+      "to": "reviewer-config",
+      "label": "標準設定を利用",
+      "kind": "config",
       "status": "proposed"
     },
     {
       "id": "reviewer-report",
-      "kind": "manages",
       "from": "reviewer",
-      "to": "work-records",
-      "label": "成果・検証根拠・引継ぎを記録",
+      "to": "github",
+      "label": "成果をpush・根拠を記録",
+      "kind": "manages",
+      "status": "proposed"
+    },
+    {
+      "id": "codex-catalog-revision",
+      "kind": "manages",
+      "from": "orchestrator",
+      "to": "catalog",
+      "label": "ロール定義・作業場を改訂してPR提出",
       "status": "proposed"
     }
   ]

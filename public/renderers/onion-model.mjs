@@ -311,12 +311,24 @@ export function ringRadiusForHub(hubRadius, satelliteRadii, margin) {
   return ring;
 }
 
-/** コンテキスト中心の配置。2つ以下は横並び、3つ以上は中央ハブ＋多角形（既定）。 */
+/** コンテキスト中心の配置。2つ以下は横並び、3つは三角形、4つ以上は中央ハブ＋多角形（既定）。 */
 export function placeContextCenters(radii, options = {}) {
   const margin = Number(options.contextMargin) > 0 ? Number(options.contextMargin) : 240;
   const startY = Number(options.startY) > 0 ? Number(options.startY) : 320;
   const list = Array.isArray(radii) ? radii.map((value) => Number(value) || 0) : [];
-  const mode = options.mode || (list.length >= 3 ? "hub" : "row");
+  const mode = options.mode || (list.length === 3 ? "triangle" : list.length >= 4 ? "hub" : "row");
+  if (mode === "triangle" && list.length === 3) {
+    const top = Number.isInteger(options.hubIndex) && options.hubIndex >= 0 && options.hubIndex < 3 ? options.hubIndex : 0;
+    const bottom = [0, 1, 2].filter(index => index !== top);
+    // Every pair has the same separation, sufficient even for unequal rings.
+    const side = Math.max(list[0] + list[1], list[0] + list[2], list[1] + list[2]) + margin;
+    const height = side * Math.sqrt(3) / 2;
+    const centers = list.map(() => ({ x: 0, y: 0 }));
+    centers[top] = { x: 0, y: -height * 2 / 3 };
+    centers[bottom[0]] = { x: -side / 2, y: height / 3 };
+    centers[bottom[1]] = { x: side / 2, y: height / 3 };
+    return centers;
+  }
   if (mode !== "hub" || list.length < 2) {
     const centers = [];
     for (let index = 0; index < list.length; index += 1) {
@@ -912,7 +924,7 @@ export function layoutArchitecture(model, options = {}) {
     ? bestRingOrderForCrossings(hubIndex, ringIndices, contextIds, validated.links)
     : ringIndices;
   const centers = placeContextCenters(radii, useHub
-    ? { mode: "hub", hubIndex, ringOrder, contextMargin }
+    ? { mode: radii.length === 3 ? "triangle" : "hub", hubIndex, ringOrder, contextMargin }
     : { mode: "row", contextMargin, startY });
 
   const contextLayouts = validated.contexts.map((context, index) =>

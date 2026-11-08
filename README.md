@@ -103,4 +103,6 @@ wsl-preview diagnostics diagram-desk --session <recording-id>
 
 `.environment.json`で、ロール・ユーザー構成・SBX境界・コンテナ・Docker daemon・マウント・接続を表示します。要素と線を選ぶと、参照元や確認記録を表示します。Dockerの操作や設定管理は行いません。
 
-[入力形式と使い方](docs/environment-relations.md)。合成サンプルは `examples/role-designer.environment.json`（人事も同列の実行基盤のDinDで並列ロールを起動する設計案。起動は未検証）。従来の二段SBX案は `examples/nested-sbx.environment.json`です。
+[入力形式と使い方](docs/environment-relations.md)。合成サンプルは `examples/role-designer.environment.json`（ロール専用SBXとCodexによる定義・改訂・評価の設計案。起動は未検証）。従来の二段SBX案は `examples/nested-sbx.environment.json`です。
+
+Onionのコンテキストは、1・2個なら横並び、3個なら三角形、4個以上ならハブを中心に配置します。3個の場合、`hubContextId`は上の頂点を指定します。
