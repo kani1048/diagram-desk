@@ -1,7 +1,8 @@
 import { findDiagramFormat, requireDiagramPath } from '../../shared/diagram-formats.mjs';
 import { mermaidRenderer } from './mermaid.mjs';
 import { onionRenderer } from './onion.mjs';
-const renderers = new Map([[mermaidRenderer.id, mermaidRenderer], [onionRenderer.id, onionRenderer]]);
+import { environmentRenderer } from './environment.mjs';
+const renderers = new Map([[mermaidRenderer.id, mermaidRenderer], [onionRenderer.id, onionRenderer], [environmentRenderer.id, environmentRenderer]]);
 // render(source, {id, state, mode}) -> {svg}; state belongs to one open document.
 // highlight(source) -> escaped HTML; handleEvent(...) -> whether to redraw.
 export function rendererFor(path) {

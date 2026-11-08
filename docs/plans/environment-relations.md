@@ -17,4 +17,16 @@ Unit tests for model validation, layout, selection, escaping and format integrat
 existing full test suite; Docker build and browser review via a seven-day VPN preview.
 
 ## Status
-Planning complete. Implementation has not started.
+Implemented as `.environment.json` with a pure validated model and renderer.
+The shared catalog, editor, source conflict handling and canvas are reused.
+
+Validation completed:
+- Full Node 22 Docker test suite: 27 tests passed.
+- Docker production image built successfully.
+- Browser: catalog discovery, nested view, node and keyboard link selection,
+  mount access/path/reference details, JSON edit/save/reload and restoration.
+- Seven-day Preview Desk publication with a synthetic sample only.
+
+Docker/SBX discovery/execution and standard-config import remain out of scope.
+The nested SBX example is explicitly a proposal, not an executed environment.
+Central CI/review status is checked after marking the PR ready.

@@ -49,3 +49,5 @@ body.detail-mode #error{position:fixed;top:120px;right:16px;z-index:12;max-width
 #selection-detail{position:absolute;right:16px;top:130px;z-index:6;width:280px;max-width:45vw;max-height:50vh;overflow:auto;background:#fff;border:1px solid #dfe3e8;border-radius:12px;padding:14px;font-size:12px;box-shadow:0 8px 24px #0f172a22;overflow-wrap:anywhere}#selection-detail h2{font-size:14px;margin:0 0 8px}#selection-detail ul{padding-left:18px}
 
 body.detail-mode #canvas{background-image:none} .canvas-background{position:absolute;inset:0;display:block;pointer-events:none;overflow:hidden}
+
+.environment-diagram [data-env-kind]{cursor:pointer}.environment-diagram [data-env-kind]:focus-visible{outline:none}.environment-diagram [data-env-kind]:focus-visible>rect,.environment-diagram [data-env-kind]:focus-visible>path{stroke:#b64e26;stroke-width:3}

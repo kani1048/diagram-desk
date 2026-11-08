@@ -12,10 +12,11 @@ export class Viewer {
     $('save').onclick = () => this.save();
     $('reload-source').onclick = () => { if (this.canLeave()) this.reload(); };
     const canvas = $('canvas');
-    for (const type of ['click', 'dblclick']) canvas.addEventListener(type, event => {
-      if (!this.renderer || this.canvasView.dragged || event.target.closest('button,aside,#zoom-controls,#viewer-error')) return;
+    for (const type of ['click', 'dblclick', 'keydown']) canvas.addEventListener(type, event => {
+      if (!this.renderer || (type !== 'keydown' && this.canvasView.dragged) || event.target.closest('button,aside,#zoom-controls,#viewer-error')) return;
+      const focused = type === 'keydown' ? event.target : null;
       const changed = this.renderer.handleEvent?.({ type, event, source: $('source').value, state: this.renderState, canvas, graph: $('graph') });
-      if (changed) this.draw();
+      if (changed) this.draw(focused?.dataset.envId);
     });
     document.addEventListener('keydown', event => { if (document.body.classList.contains('detail-mode') && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); this.save(); } });
     window.addEventListener('beforeunload', event => { if (this.dirty || this.saving) { event.preventDefault(); event.returnValue = ''; } });
@@ -55,7 +56,7 @@ export class Viewer {
   }
   async reload() { try { const item = await this.api(this.endpoint()); this.accept(item.source); } catch (error) { this.error(error); } }
   scheduleDraw() { clearTimeout(this.drawTimer); this.drawTimer = setTimeout(() => this.draw(), 100); }
-  async draw() {
+  async draw(focusEnvironmentId) {
     const serial = ++this.serial;
     try {
       const { svg, detail } = await this.renderer.render($('source').value, { id: 'viewer' + serial, state: this.renderState, mode: 'detail' });
@@ -63,6 +64,7 @@ export class Viewer {
       $('viewer-error').hidden = true; $('graph').innerHTML = svg;
       $('selection-detail').innerHTML = detail || ''; $('selection-detail').hidden = !detail;
       this.canvasView.measure();
+      if (focusEnvironmentId) [...$('graph').querySelectorAll('[data-env-id]')].find(element => element.dataset.envId === focusEnvironmentId)?.focus({ preventScroll: true });
     } catch (error) { if (serial === this.serial) this.error(error); }
   }
   error(error) { $('viewer-error').hidden = false; $('viewer-error').textContent = error.message; }

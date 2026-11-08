@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "title": "人事ロールの作業場 — 二段SBXの設計案",
+  "notes": "合成サンプルです。二段SBXの仮想化・起動は未検証。Docker/SBXの自動検出や実行は行いません。",
+  "nodes": [
+    {
+      "id": "host",
+      "kind": "host",
+      "label": "PC / WSL",
+      "status": "proposed"
+    },
+    {
+      "id": "outer",
+      "parent": "host",
+      "kind": "sbx",
+      "label": "外側SBX：実行基盤",
+      "status": "proposed",
+      "notes": "内側SBXへ仮想化を提供できるか実証が必要。"
+    },
+    {
+      "id": "runtime",
+      "parent": "outer",
+      "kind": "container",
+      "label": "runtime：実行管理",
+      "status": "proposed",
+      "refs": [
+        "runtime/compose.yaml"
+      ]
+    },
+    {
+      "id": "inner",
+      "parent": "outer",
+      "kind": "sbx",
+      "label": "内側SBX：人事の作業場",
+      "status": "proposed",
+      "refs": [
+        "roles/role-designer/sbxenv.yaml"
+      ],
+      "notes": "専用Docker daemonだけではSBX境界にはならない。"
+    },
+    {
+      "id": "role-container",
+      "parent": "inner",
+      "kind": "container",
+      "label": "人事コンテナ",
+      "status": "proposed",
+      "refs": [
+        "roles/role-designer/Dockerfile",
+        "roles/role-designer/compose.yaml"
+      ]
+    },
+    {
+      "id": "people",
+      "parent": "role-container",
+      "kind": "role",
+      "label": "人事：ロール＋作業場の設計",
+      "status": "proposed",
+      "notes": "役割、エージェント構成、Docker作業場と検証計画を用意する。"
+    },
+    {
+      "id": "docker",
+      "parent": "inner",
+      "kind": "daemon",
+      "label": "ロール専用Docker daemon",
+      "status": "proposed",
+      "notes": "ホストのDocker socketは共有しない想定。"
+    },
+    {
+      "id": "config",
+      "parent": "host",
+      "kind": "config",
+      "label": "人事のユーザー構成",
+      "status": "proposed",
+      "refs": [
+        "roles/role-designer/agent-config/config.toml",
+        "roles/role-designer/agent-config/AGENTS.md",
+        "roles/role-designer/agent-config/skills/"
+      ],
+      "notes": "Customizerの生成物。編集用JSONをruntimeに解釈させない。"
+    },
+    {
+      "id": "workspace",
+      "parent": "host",
+      "kind": "workspace",
+      "label": "ロール定義・作業場構成",
+      "status": "proposed",
+      "refs": [
+        "roles/"
+      ],
+      "notes": "GitHubへ保存する定義。秘密情報と実行履歴は含めない。"
+    }
+  ],
+  "links": [
+    {
+      "id": "manage",
+      "from": "runtime",
+      "to": "inner",
+      "kind": "manages",
+      "label": "起動・停止の管理",
+      "status": "proposed",
+      "notes": "起動方法は未実装。入れ子SBXの成立性も未確認。"
+    },
+    {
+      "id": "agent-config",
+      "from": "people",
+      "to": "config",
+      "kind": "config",
+      "label": "ユーザー構成を利用",
+      "status": "proposed"
+    },
+    {
+      "id": "workspace-mount",
+      "from": "role-container",
+      "to": "workspace",
+      "kind": "mount",
+      "access": "rw",
+      "target": "/workspace",
+      "label": "ロールを作成・更新",
+      "status": "proposed",
+      "refs": [
+        "roles/role-designer/compose.yaml"
+      ]
+    },
+    {
+      "id": "daemon-access",
+      "from": "people",
+      "to": "docker",
+      "kind": "docker",
+      "label": "イメージ構築・検証",
+      "status": "proposed"
+    }
+  ]
+}
