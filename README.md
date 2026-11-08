@@ -106,3 +106,9 @@ wsl-preview diagnostics diagram-desk --session <recording-id>
 [入力形式と使い方](docs/environment-relations.md)。合成サンプルは `examples/role-designer.environment.json`（ロール専用SBXとCodexによる定義・改訂・評価の設計案。起動は未検証）。従来の二段SBX案は `examples/nested-sbx.environment.json`です。
 
 Onionのコンテキストは、1・2個なら横並び、3個なら三角形、4個以上ならハブを中心に配置します。3個の場合、`hubContextId`は上の頂点を指定します。
+
+Onionには任意の`resources`配列で、円の外側にGit・ファイル状態・レジストリなどを表示できます。
+各項目は`id`, `label`, `kind`（`store` / `state` / `service` / `artifact`）、
+配置基準の`contextId`と`side`（`left` / `right`）、任意の`description`を持ちます。
+接続先は`resource:<id>`。外部資源は24個までです。コンポーネントにも任意の`description`を指定でき、選択時に表示します。
+外部資源への線は実行時の読み書きを表す`runtime-call`などを使い、コード依存の線と区別します。

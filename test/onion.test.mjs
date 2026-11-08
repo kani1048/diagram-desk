@@ -66,3 +66,29 @@ test('3境界は重ならない三角形になり、1・2境界の横並びと4�
  assert.equal(new Set(centers.map(point=>point.x)).size,3);
  assert.ok(centers[1].y < centers[0].y);
 });
+
+test('外部資源は全Onionの外に置き、参照と説明を検証して安全に表示する', async () => {
+ const model = sampleContextsModel();
+ model.contexts[0].components[0].description = '<script>component</script>';
+ model.resources = [
+  {id:'records',label:'GitHub records',kind:'store',contextId:'sales',side:'left',description:'<script>resource</script>'},
+  {id:'state',label:'Local state',kind:'state',contextId:'sales',side:'left'}
+ ];
+ model.links.push({from:'sales:shipping-adapter',to:'resource:records',kind:'runtime-call',label:'read records'});
+ const layout=layoutArchitecture(model);
+ const external=layout.nodes.filter(node=>node.shape==='resource'); assert.equal(external.length,2);
+ for(const node of external) for(const context of layout.contexts) assert.ok(node.x + node.width/2 < context.center.x-context.outerRadius);
+ assert.ok(Math.abs(external[0].y-external[1].y)>=100);
+ const result=await onionRenderer.render(JSON.stringify(model),{id:'resources',state:{kind:'node',id:'resource:records'},mode:'detail'});
+ assert.ok(result.svg.lastIndexOf('data-kind="edge"') < result.svg.indexOf('data-id="sales:shipping-adapter"'));
+ assert.match(result.svg,/data-shape="resource"/); assert.match(result.detail,/external resource/);
+ assert.match(result.detail,/&lt;script&gt;resource/); assert.doesNotMatch(result.svg+result.detail,/<script>/);
+ const component=await onionRenderer.render(JSON.stringify(model),{id:'component',state:{kind:'node',id:'sales:order'},mode:'detail'});
+ assert.match(component.detail,/&lt;script&gt;component/);
+ for(const mutate of [
+  m=>m.resources.push({...m.resources[0]}),
+  m=>m.resources[0].contextId='missing',
+  m=>m.resources[0].kind='unknown',
+  m=>m.links[0].to='resource:missing'
+ ]) {const bad=structuredClone(model);mutate(bad);assert.throws(()=>layoutArchitecture(bad));}
+});

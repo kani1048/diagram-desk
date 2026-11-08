@@ -94,3 +94,8 @@ Add optional described external resources to Onion diagrams, with validated
 references and placement outside context rings. Show component descriptions in
 selection details so client/driver responsibilities are inspectable. Preserve
 existing models. Validate model references, escaping, ring clearance and render.
+
+Completed: optional external resources validate references/types and sit outside
+all context rings. Nodes expose descriptions in selection details. Nodes render
+above cross-context lines so a line cannot steal endpoint selection. All 29
+Node 22 tests pass; browser client/resource selection and descriptions verified.

@@ -665,6 +665,7 @@ function validateContext(raw, path) {
     return {
       id: componentId,
       label: String(component.label || componentId),
+      description: String(component.description || ""),
       layerId,
       kind,
       socket,
@@ -734,7 +735,26 @@ export function validateArchitectureModel(data) {
       })
     : [];
   const busIds = new Set(buses.map((bus) => bus.id));
+  if (data.resources != null && !Array.isArray(data.resources)) throw new Error("resources は配列にしてください");
+  if ((data.resources || []).length > 24) throw new Error("resources は24件までです");
+  const resourceIds = new Set();
+  const resources = (data.resources || []).map((resource, index) => {
+    if (!resource || typeof resource !== "object") throw new Error(`resources[${index}] が不正です`);
+    const id = String(resource.id || "").trim();
+    if (!id || resourceIds.has(id)) throw new Error(`resource id が空または重複しています: ${id}`);
+    resourceIds.add(id);
+    const kind = String(resource.kind || "store");
+    if (!["store", "state", "service", "artifact"].includes(kind)) throw new Error(`resource kind が不正です: ${kind}`);
+    const contextId = String(resource.contextId || contexts[0].id);
+    if (!contexts.some(context => context.id === contextId)) throw new Error(`resource contextId が未定義です: ${contextId}`);
+    const side = resource.side || "right";
+    if (!["left", "right"].includes(side)) throw new Error(`resource side が不正です: ${side}`);
+    return { id, kind, contextId, side, label: String(resource.label || id), description: String(resource.description || "") };
+  });
+  if (resources.length && contexts.some(context => context.id === "resource")) throw new Error("resource は予約済みのcontext idです");
+
   const endpointOk = (ref) => {
+    if (ref.startsWith("resource:") && resources.length) return resourceIds.has(ref.slice(9));
     if (ref.startsWith("bus:")) return busIds.has(ref.slice(4));
     const split = ref.indexOf(":");
     if (split < 1) return false;
@@ -768,6 +788,7 @@ export function validateArchitectureModel(data) {
     schemaVersion,
     contexts,
     buses,
+    resources,
     links,
     hubContextId,
     layers: primary.layers,
@@ -967,6 +988,22 @@ export function layoutArchitecture(model, options = {}) {
     nodeById.set(id, nodes[nodes.length - 1]);
   });
 
+  const leftEdge = Math.min(...contextLayouts.map(context => context.center.x - context.outerRadius));
+  const rightEdge = Math.max(...contextLayouts.map(context => context.center.x + context.outerRadius));
+  const occupiedResourceY = { left: [], right: [] };
+  for (const resource of validated.resources) {
+    const anchor = contextLayouts.find(context => context.id === resource.contextId);
+    let y = anchor.center.y;
+    while (occupiedResourceY[resource.side].some(value => Math.abs(value - y) < 100)) y += 100;
+    occupiedResourceY[resource.side].push(y);
+    const width = Math.max(180, Math.min(320, resource.label.length * 8 + 24));
+    const node = { ...resource, id: `resource:${resource.id}`, localId: resource.id,
+      ownerContextId: resource.contextId, contextId: "", contextLabel: "", layerId: "", sector: "", socket: "",
+      x: resource.side === "left" ? leftEdge - 100 - width / 2 : rightEdge + 100 + width / 2,
+      y, width, shape: "resource" };
+    nodes.push(node); nodeById.set(node.id, node);
+  }
+
   validated.links.forEach((link, index) => {
     const from = nodeById.get(link.from);
     const to = nodeById.get(link.to);
@@ -1001,7 +1038,7 @@ export function layoutArchitecture(model, options = {}) {
     grow(context.center.x, context.center.y - context.outerRadius - 20, 8);
   }
   for (const node of nodes) {
-    grow(node.x, node.y, node.shape === "bus" ? 56 : 64);
+    grow(node.x, node.y, node.shape === "resource" ? node.width / 2 + 8 : node.shape === "bus" ? 56 : 64);
   }
   for (const edge of edges) {
     grow(edge.x1, edge.y1, 8);
