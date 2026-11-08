@@ -88,3 +88,9 @@ Completed: three-context layouts use triangle vertices with pairwise radius
 clearance; one/two rows and four-plus hub behavior are covered by regression
 checks. All 28 Node 22 tests pass. The current sample now shows per-role SBX and
 Codex-owned role revisions; agent-runtime ports are documented as Presentation-owned.
+
+## Follow-up: explain adapters and external resources
+Add optional described external resources to Onion diagrams, with validated
+references and placement outside context rings. Show component descriptions in
+selection details so client/driver responsibilities are inspectable. Preserve
+existing models. Validate model references, escaping, ring clearance and render.
