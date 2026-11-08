@@ -71,3 +71,9 @@ pushed work. Uncommitted/unpushed work is deliberately not migrated; non-Git
 persistent data management is outside this architecture. Authentication is
 reconfigured using a checklist/guide. No live orchestration is implemented.
 Validate the sample with existing tests, build the preview and inspect it.
+
+Orchestration update completed: the sample documents assignment, evidence-based
+role evaluation, HR tuning proposals and version comparison/adoption. It adds
+CODEX_HOME-only exchange, independent project workspaces and issue/PR records.
+Migration exclusions and fresh-auth setup are explicit. Node 22 suite: 27 passed.
+No role execution, evaluation service or backup system was introduced.

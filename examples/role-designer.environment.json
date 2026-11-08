@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "title": "人事も同列：実行基盤のDinDで並列ロールを起動",
-  "notes": "合成サンプル。共通SBX内のruntime DockerがDinDで人事・実装・レビューの作業コンテナを並列起動する。各ロールはユーザー構成と作業領域を持つ。並列起動・資源・マウントは未検証。 この会話のCodexは構成づくりを支援中。参加者は実行場所ではなく関与を示す。実施済みの図・コード・PR作業を実線、将来の人事・runtime整備を破線で区別。",
+  "title": "オーケストレーター：並列ロールの評価と改善",
+  "notes": "設計案。Codexが全体を調整し、人事・実装・レビューを評価して改善する。runtimeが共通SBX内のDinDでロールを並列起動する既存案を維持。Customizerとの契約は生成済みCODEX_HOMEのみ。移行対象は定義とpush済みリポジトリ・issue/PR。未commit・未pushの作業は移行しない。DB等の永続データは別手段で扱い、本構成の責務に含めない。認証は移行先で再設定。実際の起動・評価自動化は未実装。",
   "nodes": [
     {
       "id": "user",
@@ -14,10 +14,10 @@
     {
       "id": "current-codex",
       "kind": "participant",
-      "label": "この会話のCodex：構成づくり支援",
+      "label": "Codex：全体オーケストレーター",
       "status": "confirmed",
       "evidence": "2026-11-08 この会話で構成を相談し、diagram-deskの関係図・コード・検証・PR #2を更新。",
-      "notes": "この会話で設計相談を受け、構成案・ソース・関係図を編集し、テスト・ビルド・プレビュー・PR提出を行う。提案中のSBXや人事コンテナにはまだ配置されていない。人事や実装担当を自動起動しているわけではない。"
+      "notes": "現在はこの会話で構成・図・検証・PRを扱う。将来は目的をタスクへ分解し、各ロールへ割当・進捗調整・成果評価を行う。品質、手戻り、所要時間、実行コストをタスクと設定バージョンに紐付けて比較し、人事へ改善を依頼する。人事自身も評価対象。チューニングは変更前後を同等の課題で比較し、採用・差戻しを判断する。実行基盤への配置と自動評価は未実装。"
     },
     {
       "id": "host",
@@ -69,19 +69,20 @@
       "parent": "people-container",
       "label": "人事",
       "status": "proposed",
-      "notes": "ロールのユーザー構成とDocker作業場・検証計画を作成する。自分も他と同じロールコンテナで働く。"
+      "notes": "オーケストレーターの評価と改善依頼を受け、ロールの生成済みCODEX_HOME、Docker作業場、検証計画、認証設定項目と導入ガイドを提案・改訂する。自身も他と同列のロール。DBバックアップや未push作業の移行は担当しない。"
     },
     {
       "id": "people-config",
       "kind": "config",
       "parent": "people-container",
-      "label": "人事のユーザー構成",
+      "label": "人事：生成済みCODEX_HOME",
       "status": "proposed",
       "refs": [
         "roles/people/agent-config/config.toml",
         "roles/people/agent-config/AGENTS.md",
         "roles/people/agent-config/skills/"
-      ]
+      ],
+      "notes": "Customizerが生成する標準ファイルのみを利用。実行側はCustomizerの編集用JSONや内部依存を解釈しない。"
     },
     {
       "id": "builder-container",
@@ -106,13 +107,14 @@
       "id": "builder-config",
       "kind": "config",
       "parent": "builder-container",
-      "label": "実装担当のユーザー構成",
+      "label": "実装担当：生成済みCODEX_HOME",
       "status": "proposed",
       "refs": [
         "roles/builder/agent-config/config.toml",
         "roles/builder/agent-config/AGENTS.md",
         "roles/builder/agent-config/skills/"
-      ]
+      ],
+      "notes": "Customizerが生成する標準ファイルのみを利用。実行側はCustomizerの編集用JSONや内部依存を解釈しない。"
     },
     {
       "id": "reviewer-container",
@@ -137,13 +139,14 @@
       "id": "reviewer-config",
       "kind": "config",
       "parent": "reviewer-container",
-      "label": "レビュー担当のユーザー構成",
+      "label": "レビュー担当：生成済みCODEX_HOME",
       "status": "proposed",
       "refs": [
         "roles/reviewer/agent-config/config.toml",
         "roles/reviewer/agent-config/AGENTS.md",
         "roles/reviewer/agent-config/skills/"
-      ]
+      ],
+      "notes": "Customizerが生成する標準ファイルのみを利用。実行側はCustomizerの編集用JSONや内部依存を解釈しない。"
     },
     {
       "id": "catalog",
@@ -154,7 +157,7 @@
       "refs": [
         "roles/"
       ],
-      "notes": "人事が定義を提案し、検証された版をruntimeが利用する。人事自身がホストのdaemonや起動権限を自由に変更するものではない。"
+      "notes": "Git管理するロールと作業場の定義。生成済みCODEX_HOMEとDocker/SBX構成、認証設定項目・導入ガイドを保持。編集元はCustomizer側の責務。検証・採用したバージョンをruntimeが利用する。秘密情報は保存しない。"
     },
     {
       "id": "design-work",
@@ -180,6 +183,28 @@
         "https://github.com/kani1048/diagram-desk/pull/2"
       ],
       "notes": "CI・中央レビューの成功は別途確認する。自動マージは行わない。"
+    },
+    {
+      "id": "customizer",
+      "kind": "service",
+      "label": "Customizer：CODEX_HOME生成",
+      "status": "proposed",
+      "notes": "編集元を管理し、標準CODEX_HOMEを出力する。runtimeはCustomizer本体に依存しない。"
+    },
+    {
+      "id": "project-repos",
+      "kind": "workspace",
+      "parent": "host",
+      "label": "案件Gitリポジトリ：ロール別作業コピー",
+      "status": "proposed",
+      "notes": "同じ案件でもロールごとに独立したclone/worktreeを使う。コード・成果物はcommitしてpushする。未commit・未pushの変更は移行対象外。DB等の永続データ管理は別手段。"
+    },
+    {
+      "id": "work-records",
+      "kind": "service",
+      "label": "GitHub：案件issue / PR・評価記録",
+      "status": "proposed",
+      "notes": "作業指示、成果、判断、再開手順、評価根拠と設定バージョンを各案件のissue/PRへ記録する。評価は未実装。秘密情報は記録しない。"
     }
   ],
   "links": [
@@ -283,9 +308,9 @@
       "from": "current-codex",
       "to": "people",
       "kind": "manages",
-      "label": "人事の初期構成を一緒に用意",
+      "label": "人事の評価・ロール改善依頼",
       "status": "proposed",
-      "notes": "人事ロールの指示・スキル・作業場を設計する段階。稼働中の人事エージェントへの委譲ではない。"
+      "notes": "目的・評価根拠・改善仮説を渡す。人事が設定と作業場の改訂を提案し、比較検証後に採用する。"
     },
     {
       "id": "codex-runtime-bootstrap",
@@ -295,6 +320,82 @@
       "label": "実行基盤の実装・検証を支援",
       "status": "proposed",
       "notes": "現時点は関係図の設計案。SBX/DinDの起動や復元は今後の実証対象。"
+    },
+    {
+      "id": "customizer-output",
+      "kind": "config",
+      "from": "customizer",
+      "to": "catalog",
+      "label": "生成済みCODEX_HOMEのみ受渡し",
+      "status": "proposed"
+    },
+    {
+      "id": "codex-evaluation",
+      "kind": "manages",
+      "from": "current-codex",
+      "to": "work-records",
+      "label": "成果評価・比較結果・採否を記録",
+      "status": "proposed"
+    },
+    {
+      "id": "codex-assign-builder",
+      "kind": "manages",
+      "from": "current-codex",
+      "to": "builder",
+      "label": "仕事の割当・進捗調整・評価",
+      "status": "proposed"
+    },
+    {
+      "id": "codex-assign-reviewer",
+      "kind": "manages",
+      "from": "current-codex",
+      "to": "reviewer",
+      "label": "検証依頼・レビュー品質の評価",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-repo",
+      "kind": "mount",
+      "from": "builder-container",
+      "to": "project-repos",
+      "access": "rw",
+      "target": "/workspace/project",
+      "label": "独立した案件作業コピー",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-repo",
+      "kind": "mount",
+      "from": "reviewer-container",
+      "to": "project-repos",
+      "access": "rw",
+      "target": "/workspace/project",
+      "label": "独立した案件作業コピー",
+      "status": "proposed"
+    },
+    {
+      "id": "people-report",
+      "kind": "manages",
+      "from": "people",
+      "to": "work-records",
+      "label": "成果・検証根拠・引継ぎを記録",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-report",
+      "kind": "manages",
+      "from": "builder",
+      "to": "work-records",
+      "label": "成果・検証根拠・引継ぎを記録",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-report",
+      "kind": "manages",
+      "from": "reviewer",
+      "to": "work-records",
+      "label": "成果・検証根拠・引継ぎを記録",
+      "status": "proposed"
     }
   ]
 }
