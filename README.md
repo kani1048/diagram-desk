@@ -12,7 +12,7 @@ node bin/diagram-desk.mjs repo add /absolute/path/to/repository
 npm start
 ```
 
-http://127.0.0.1:4310 を開きます。画面はワークスペース一覧 → 図のプレビュー一覧 → 図の詳細の3段階です。検索、左右キーによる図の切り替え、ソース表示、パンくず・ブラウザの戻る操作に対応します。対象は `.mmd` と `.onion.json`。登録は CLI、閲覧は GUI / CLI の両方から行えます。
+http://127.0.0.1:4310 を開きます。画面はワークスペース一覧 → 図のプレビュー一覧 → 図の詳細の3段階です。検索、左右キーによる図の切り替え、ソース表示、パンくず・ブラウザの戻る操作に対応します。対象は `.mmd`、`.onion.json`、`.environment.json`。登録は CLI、閲覧は GUI / CLI の両方から行えます。
 
 ```sh
 node bin/diagram-desk.mjs repo list
@@ -98,3 +98,17 @@ wsl-preview diagnostics diagram-desk --session <recording-id>
 再現操作の後に「記録停止」を押し、「保存済み」を確認して記録IDを伝えてください。ログは容量制限付きの一時ログで、取得対象は24時間以内、コンテナ再作成で消えます。取得基盤・画面パネルは wsl-preview に置いています。座標ログは実際の合成ピクセルを記録するものではないため、Safari固有の描画ずれは画面録画と合わせて調べます。
 
 背景の比較版では画面全体を覆うSVGの `pattern` を使い、図と同じ移動・倍率を `patternTransform` へ適用します。画面サイズの矩形をパターンで塗るため、どこまでパンしても図の端で背景は途切れません。原因を切り分けるため、ドットの画面上の半径は従来どおり1pxを維持しています。
+
+## ロール環境の関係図
+
+`.environment.json`で、ロール・ユーザー構成・SBX境界・コンテナ・Docker daemon・マウント・接続を表示します。要素と線を選ぶと、参照元や確認記録を表示します。Dockerの操作や設定管理は行いません。
+
+[入力形式と使い方](docs/environment-relations.md)。合成サンプルは `examples/role-designer.environment.json`（ロール専用SBXとCodexによる定義・改訂・評価の設計案。起動は未検証）。従来の二段SBX案は `examples/nested-sbx.environment.json`です。
+
+Onionのコンテキストは、1・2個なら横並び、3個なら三角形、4個以上ならハブを中心に配置します。3個の場合、`hubContextId`は上の頂点を指定します。
+
+Onionには任意の`resources`配列で、円の外側にGit・ファイル状態・レジストリなどを表示できます。
+各項目は`id`, `label`, `kind`（`store` / `state` / `service` / `artifact`）、
+配置基準の`contextId`と`side`（`left` / `right`）、任意の`description`を持ちます。
+接続先は`resource:<id>`。外部資源は24個までです。コンポーネントにも任意の`description`を指定でき、選択時に表示します。
+外部資源への線は実行時の読み書きを表す`runtime-call`などを使い、コード依存の線と区別します。

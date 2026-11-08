@@ -1,0 +1,277 @@
+{
+  "version": 1,
+  "title": "ロール別SBX：独立した定義と実行インスタンス",
+  "notes": "全て設計案・未実証。同じロールの複数instanceを許容。共通SBX・共通DinDなし。SBX専用Engineからロールimageを起動する接続方式はspike対象。認証は移行先で再設定。未commit・未push、会話履歴、DB等の永続データは移行対象外。",
+  "nodes": [
+    {
+      "id": "host",
+      "kind": "host",
+      "label": "移行先PC：固有設定と認証",
+      "status": "proposed"
+    },
+    {
+      "id": "orchestrator",
+      "kind": "participant",
+      "label": "Codex：定義・改訂・調整・評価",
+      "status": "proposed",
+      "notes": "現在の会話からの関与。専用SBXへの配置を意味しない。"
+    },
+    {
+      "id": "manager",
+      "kind": "service",
+      "parent": "host",
+      "label": "agent-runtime：起動管理CLI",
+      "status": "proposed"
+    },
+    {
+      "id": "catalog",
+      "kind": "service",
+      "label": "Git：採用済みロールカタログ",
+      "status": "proposed"
+    },
+    {
+      "id": "customizer",
+      "kind": "service",
+      "label": "Customizer：標準設定を生成",
+      "status": "proposed"
+    },
+    {
+      "id": "registry",
+      "kind": "service",
+      "label": "OCI：固定digestのimage",
+      "status": "proposed"
+    },
+    {
+      "id": "github",
+      "kind": "service",
+      "label": "案件Git / issue / PR / 評価",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-sbx",
+      "kind": "sbx",
+      "parent": "host",
+      "label": "実装専用SBX：instance単位",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-engine",
+      "kind": "daemon",
+      "parent": "builder-sbx",
+      "label": "SBX専用Docker Engine",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-container",
+      "kind": "container",
+      "parent": "builder-sbx",
+      "label": "実装：ロールimage",
+      "status": "proposed"
+    },
+    {
+      "id": "builder",
+      "kind": "role",
+      "parent": "builder-container",
+      "label": "実装エージェント",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-config",
+      "kind": "config",
+      "parent": "builder-container",
+      "label": "専用CODEX_HOMEコピー",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-workspace",
+      "kind": "workspace",
+      "parent": "host",
+      "label": "実装：独立Git clone",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-sbx",
+      "kind": "sbx",
+      "parent": "host",
+      "label": "レビュー専用SBX：instance単位",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-engine",
+      "kind": "daemon",
+      "parent": "reviewer-sbx",
+      "label": "SBX専用Docker Engine",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-container",
+      "kind": "container",
+      "parent": "reviewer-sbx",
+      "label": "レビュー：ロールimage",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer",
+      "kind": "role",
+      "parent": "reviewer-container",
+      "label": "レビューエージェント",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-config",
+      "kind": "config",
+      "parent": "reviewer-container",
+      "label": "専用CODEX_HOMEコピー",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-workspace",
+      "kind": "workspace",
+      "parent": "host",
+      "label": "レビュー：独立Git clone",
+      "status": "proposed"
+    }
+  ],
+  "links": [
+    {
+      "id": "user-plan",
+      "from": "orchestrator",
+      "to": "manager",
+      "label": "割当・起動・停止を依頼",
+      "kind": "manages",
+      "status": "proposed"
+    },
+    {
+      "id": "read-catalog",
+      "from": "manager",
+      "to": "catalog",
+      "label": "不変commitを取得",
+      "kind": "config",
+      "status": "proposed"
+    },
+    {
+      "id": "generate",
+      "from": "customizer",
+      "to": "catalog",
+      "label": "生成済みCODEX_HOMEのみ",
+      "kind": "config",
+      "status": "proposed"
+    },
+    {
+      "id": "evaluate",
+      "from": "orchestrator",
+      "to": "github",
+      "label": "成果評価・版比較・採否を記録",
+      "kind": "manages",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-create",
+      "from": "manager",
+      "to": "builder-sbx",
+      "label": "専用環境を作成・接続",
+      "kind": "manages",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-launch",
+      "from": "builder-engine",
+      "to": "builder-container",
+      "label": "固定imageで起動（実証対象）",
+      "kind": "docker",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-image",
+      "from": "builder-engine",
+      "to": "registry",
+      "label": "digestで取得",
+      "kind": "network",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-mount",
+      "from": "builder-container",
+      "to": "builder-workspace",
+      "label": "daemon側パスからmount",
+      "kind": "mount",
+      "status": "proposed",
+      "access": "rw",
+      "target": "/workspace"
+    },
+    {
+      "id": "builder-config-use",
+      "from": "builder",
+      "to": "builder-config",
+      "label": "標準設定を利用",
+      "kind": "config",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-report",
+      "from": "builder",
+      "to": "github",
+      "label": "成果をpush・根拠を記録",
+      "kind": "manages",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-create",
+      "from": "manager",
+      "to": "reviewer-sbx",
+      "label": "専用環境を作成・接続",
+      "kind": "manages",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-launch",
+      "from": "reviewer-engine",
+      "to": "reviewer-container",
+      "label": "固定imageで起動（実証対象）",
+      "kind": "docker",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-image",
+      "from": "reviewer-engine",
+      "to": "registry",
+      "label": "digestで取得",
+      "kind": "network",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-mount",
+      "from": "reviewer-container",
+      "to": "reviewer-workspace",
+      "label": "daemon側パスからmount",
+      "kind": "mount",
+      "status": "proposed",
+      "access": "rw",
+      "target": "/workspace"
+    },
+    {
+      "id": "reviewer-config-use",
+      "from": "reviewer",
+      "to": "reviewer-config",
+      "label": "標準設定を利用",
+      "kind": "config",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-report",
+      "from": "reviewer",
+      "to": "github",
+      "label": "成果をpush・根拠を記録",
+      "kind": "manages",
+      "status": "proposed"
+    },
+    {
+      "id": "codex-catalog-revision",
+      "kind": "manages",
+      "from": "orchestrator",
+      "to": "catalog",
+      "label": "ロール定義・作業場を改訂してPR提出",
+      "status": "proposed"
+    }
+  ]
+}

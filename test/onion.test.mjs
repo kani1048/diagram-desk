@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { onionRenderer } from '../public/renderers/onion.mjs';
-import { sampleArchitectureModel, sampleContextsModel } from '../public/renderers/onion-model.mjs';
+import { sampleArchitectureModel, sampleContextsModel, placeContextCenters, layoutArchitecture } from '../public/renderers/onion-model.mjs';
 import { rendererFor } from '../public/renderers/index.mjs';
 import { diagramMetadata } from '../shared/diagram-formats.mjs';
 import { screenUrl, parseScreen } from '../public/routes.mjs';
@@ -45,4 +45,50 @@ test('Onionも共通カタログで探索・読込・保存・競合拒否を行
   assert.equal((await desk.readDiagram(repo.id, 'a.onion.json')).source, source + '\n');
   await assert.rejects(() => desk.saveDiagram(repo.id, 'a.onion.json', source, source), /外部変更/);
  } finally { await rm(temp, { recursive: true, force: true }); }
+});
+
+test('3境界は重ならない三角形になり、1・2境界の横並びと4境界のハブを維持する', () => {
+ const radii = [240, 360, 480], margin = 180;
+ const points = placeContextCenters(radii, { contextMargin: margin, hubIndex: 1 });
+ assert.deepEqual(points, placeContextCenters(radii, { contextMargin: margin, hubIndex: 1 }));
+ const [a,b,c] = points;
+ assert.ok(Math.abs((b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x)) > 1);
+ for (let i=0;i<3;i++) for(let j=i+1;j<3;j++) assert.ok(Math.hypot(points[i].x-points[j].x,points[i].y-points[j].y) >= radii[i]+radii[j]+margin-1e-8);
+ assert.ok(points[1].y < points[0].y);
+ assert.equal(placeContextCenters([120]).length, 1);
+ const row = placeContextCenters([120,240]); assert.equal(row[0].y,row[1].y);
+ const hub = placeContextCenters([120,120,120,120]); assert.deepEqual(hub[0],{x:0,y:0});
+ const model = sampleContextsModel();
+ model.contexts.push({...structuredClone(model.contexts[0]),id:'third',label:'Third'});
+ model.hubContextId='delivery';
+ const layout = layoutArchitecture(model);
+ const centers = layout.contexts.map(context => context.center);
+ assert.equal(new Set(centers.map(point=>point.x)).size,3);
+ assert.ok(centers[1].y < centers[0].y);
+});
+
+test('外部資源は全Onionの外に置き、参照と説明を検証して安全に表示する', async () => {
+ const model = sampleContextsModel();
+ model.contexts[0].components[0].description = '<script>component</script>';
+ model.resources = [
+  {id:'records',label:'GitHub records',kind:'store',contextId:'sales',side:'left',description:'<script>resource</script>'},
+  {id:'state',label:'Local state',kind:'state',contextId:'sales',side:'left'}
+ ];
+ model.links.push({from:'sales:shipping-adapter',to:'resource:records',kind:'runtime-call',label:'read records'});
+ const layout=layoutArchitecture(model);
+ const external=layout.nodes.filter(node=>node.shape==='resource'); assert.equal(external.length,2);
+ for(const node of external) for(const context of layout.contexts) assert.ok(node.x + node.width/2 < context.center.x-context.outerRadius);
+ assert.ok(Math.abs(external[0].y-external[1].y)>=100);
+ const result=await onionRenderer.render(JSON.stringify(model),{id:'resources',state:{kind:'node',id:'resource:records'},mode:'detail'});
+ assert.ok(result.svg.lastIndexOf('data-kind="edge"') < result.svg.indexOf('data-id="sales:shipping-adapter"'));
+ assert.match(result.svg,/data-shape="resource"/); assert.match(result.detail,/external resource/);
+ assert.match(result.detail,/&lt;script&gt;resource/); assert.doesNotMatch(result.svg+result.detail,/<script>/);
+ const component=await onionRenderer.render(JSON.stringify(model),{id:'component',state:{kind:'node',id:'sales:order'},mode:'detail'});
+ assert.match(component.detail,/&lt;script&gt;component/);
+ for(const mutate of [
+  m=>m.resources.push({...m.resources[0]}),
+  m=>m.resources[0].contextId='missing',
+  m=>m.resources[0].kind='unknown',
+  m=>m.links[0].to='resource:missing'
+ ]) {const bad=structuredClone(model);mutate(bad);assert.throws(()=>layoutArchitecture(bad));}
 });

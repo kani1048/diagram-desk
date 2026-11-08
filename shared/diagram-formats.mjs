@@ -1,6 +1,7 @@
 // Pure format definitions shared by domain rules, routes and browser adapters.
 // Register a format only when its renderer is available.
 export const DIAGRAM_FORMATS = Object.freeze([
+  Object.freeze({ id: 'environment', extension: '.environment.json', label: 'ロール環境の関係図', editorLabel: '環境関係図 JSON', kind: () => 'ロール環境の関係図' }),
   Object.freeze({ id: 'onion', extension: '.onion.json', label: 'Onion Architecture', editorLabel: 'Onion JSON', kind: () => 'Onion Architecture' }),
   Object.freeze({ id: 'mermaid', extension: '.mmd', label: 'Mermaid', editorLabel: 'Mermaidコード', kind: mermaidKind }),
 ]);

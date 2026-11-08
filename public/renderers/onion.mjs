@@ -42,6 +42,12 @@ function nodeMarkup(node, dim, selected) {
       '<text x="' + node.x + '" y="' + (node.y + 4) + '" text-anchor="middle" font-size="11" font-weight="700" fill="#111">' + escapeHtml(sock) + '</text>' +
       '<text x="' + node.x + '" y="' + (node.y + 28) + '" text-anchor="middle" font-size="10" fill="#334155">' + escapeHtml(node.label) + '</text></g>';
   }
+  if (node.shape === "resource") {
+    return "<g" + common + ">" + title +
+      '<rect x="' + (node.x - node.width / 2) + '" y="' + (node.y - 28) + '" width="' + node.width + '" height="56" rx="8" fill="#eef6ff" stroke="#334155" stroke-width="2"></rect>' +
+      '<text x="' + node.x + '" y="' + (node.y - 7) + '" text-anchor="middle" font-size="10">' + escapeHtml(node.kind.toUpperCase()) + '</text>' +
+      '<text x="' + node.x + '" y="' + (node.y + 12) + '" text-anchor="middle" font-size="11" font-weight="700">' + escapeHtml(node.label) + '</text></g>';
+  }
   if (node.shape === "bus") {
     return "<g" + common + ">" + title +
       '<rect x="' + (node.x - 48) + '" y="' + (node.y - 18) + '" width="96" height="36" rx="18" fill="#fff" stroke="#111827" stroke-width="2"></rect>' +
@@ -151,14 +157,6 @@ function paint() {
       .filter((edge) => edge.scope === "context" && (edge.from.startsWith(context.id + ":") || edge.to.startsWith(context.id + ":")))
       .map((edge) => edgeMarkup(edge, hasSelection, neighbors))
       .join("");
-    const contextNodes = (layout.nodes || [])
-      .filter((node) => node.contextId === context.id)
-      .map((node) => {
-        const selected = node.id === selectedId && selectedKind === "node"
-          ? " selected"
-          : neighbors.has(node.id) ? " neighbor" : "";
-        return nodeMarkup(node, false, selected);
-      }).join("");
     return "<g" + attrs({
       id: ctxId,
       class: "arch-context" + ctxHot,
@@ -168,13 +166,19 @@ function paint() {
     }) + "><title>" + escapeHtml(context.label) + "</title>" +
       rings + sectors +
       '<text class="context-label" x="' + context.center.x + '" y="' + (context.center.y - context.outerRadius - 16) + '" text-anchor="middle">' + escapeHtml(context.label) + "</text>" +
-      contextEdges + contextNodes +
+      contextEdges +
       "</g>";
   }).join("");
 
   const linkEdges = (layout.edges || [])
     .filter((edge) => edge.scope !== "context")
     .map((edge) => edgeMarkup(edge, hasSelection, neighbors))
+    .join("");
+  // Keep all nodes above cross-context edges so an endpoint remains selectable.
+  const contextNodes = (layout.nodes || [])
+    .filter(node => node.contextId)
+    .map(node => nodeMarkup(node, false,
+      node.id === selectedId && selectedKind === "node" ? " selected" : neighbors.has(node.id) ? " neighbor" : ""))
     .join("");
   const busNodes = (layout.nodes || [])
     .filter((node) => !node.contextId)
@@ -189,7 +193,7 @@ function paint() {
     "<defs>" + architecturePatternDefs() +
     '<marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#334155"></path></marker>' +
     '<marker id="arrow-hot" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#e67e22"></path></marker></defs>' +
-    contextMarkup + linkEdges + busNodes + "</svg>";
+    contextMarkup + linkEdges + contextNodes + busNodes + "</svg>";
 
 
 }
@@ -235,11 +239,13 @@ function showSelectionDetail() {
     const related = layout.edges.filter((edge) => edge.from === selectedId || edge.to === selectedId);
     detailEl.hidden = false;
     detailEl.innerHTML = "<h2>" + escapeHtml(node.label) + "</h2>" +
-      "<p>kind: component</p>" +
+      "<p>kind: " + (node.shape === "resource" ? "external resource" : "component") + "</p>" +
       "<p>id: " + escapeHtml(node.id) + "</p>" +
       (node.contextLabel ? "<p>context: " + escapeHtml(node.contextLabel) + "</p>" : "") +
       (node.layerId ? "<p>layer: " + escapeHtml(node.layerId) + "</p>" : "") +
       "<p>componentKind: " + escapeHtml(node.kind) + "</p>" +
+      (node.description ? "<p>" + escapeHtml(node.description) + "</p>" : "") +
+      (node.ownerContextId ? "<p>owner context: " + escapeHtml(node.ownerContextId) + "</p>" : "") +
       (node.socket ? "<p>socket: " + escapeHtml(node.socket) + "</p>" : "") +
       (node.sector ? "<p>sector: " + escapeHtml(node.sector) + "</p>" : "") +
       "<ul>" + related.map((edge) => "<li>" + escapeHtml(edge.kind) + ": " + escapeHtml(edge.from) + " → " + escapeHtml(edge.to) + "</li>").join("") + "</ul>";
