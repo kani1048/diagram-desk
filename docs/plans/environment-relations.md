@@ -37,3 +37,7 @@ runtime with parallel role containers, each owning a dedicated Docker daemon
 and user configuration. Keep the prior nested-SBX example for comparison.
 Validate both samples with the existing model/layout tests, build and preview.
 This changes diagrams only; no daemon or container privileges are provisioned.
+
+Follow-up completed: HR, implementation and review are peers under runtime,
+with per-role user configuration and DinD. Both examples validate; all 27 tests
+pass under Node 22, the Docker image builds, and browser selection is verified.

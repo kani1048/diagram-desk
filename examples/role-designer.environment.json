@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "title": "人事ロールの作業場 — 二段SBXの設計案",
-  "notes": "合成サンプルです。二段SBXの仮想化・起動は未検証。Docker/SBXの自動検出や実行は行いません。",
+  "title": "人事も同列：並列ロールと専用DinDの設計案",
+  "notes": "合成サンプル。共通SBX内のruntime Dockerに、人事・実装・レビューを並列配置し、各ロールが専用DinDを持つ。並列起動・権限・資源・マウントの隔離は未検証。",
   "nodes": [
     {
       "id": "host",
@@ -10,123 +10,252 @@
       "status": "proposed"
     },
     {
-      "id": "outer",
-      "parent": "host",
+      "id": "sandbox",
       "kind": "sbx",
-      "label": "外側SBX：実行基盤",
+      "parent": "host",
+      "label": "共通SBX：エージェント実行基盤",
       "status": "proposed",
-      "notes": "内側SBXへ仮想化を提供できるか実証が必要。"
+      "notes": "VM境界は共通SBX。ロール間はコンテナ境界で、独立VMではない。"
     },
     {
       "id": "runtime",
-      "parent": "outer",
       "kind": "container",
-      "label": "runtime：実行管理",
+      "parent": "sandbox",
+      "label": "runtime Docker：ロールの起動・再接続",
       "status": "proposed",
       "refs": [
         "runtime/compose.yaml"
-      ]
-    },
-    {
-      "id": "inner",
-      "parent": "outer",
-      "kind": "sbx",
-      "label": "内側SBX：人事の作業場",
-      "status": "proposed",
-      "refs": [
-        "roles/role-designer/sbxenv.yaml"
       ],
-      "notes": "専用Docker daemonだけではSBX境界にはならない。"
+      "notes": "人事を含む全ロールを同列の作業コンテナとして起動する。"
     },
     {
-      "id": "role-container",
-      "parent": "inner",
+      "id": "runtime-docker",
+      "kind": "daemon",
+      "parent": "runtime",
+      "label": "実行基盤のDocker daemon",
+      "status": "proposed",
+      "notes": "ロールコンテナの起動専用。ホストsocketの共有は想定しない。"
+    },
+    {
+      "id": "people-container",
       "kind": "container",
-      "label": "人事コンテナ",
+      "parent": "runtime",
+      "label": "人事のロール環境",
       "status": "proposed",
       "refs": [
-        "roles/role-designer/Dockerfile",
-        "roles/role-designer/compose.yaml"
-      ]
+        "roles/people/compose.yaml"
+      ],
+      "notes": "専用のユーザー構成・作業領域・DinD daemonを持つ。並列実行時のCPU/メモリ・権限・通信は実証して確定。"
     },
     {
       "id": "people",
-      "parent": "role-container",
       "kind": "role",
-      "label": "人事：ロール＋作業場の設計",
+      "parent": "people-container",
+      "label": "人事",
       "status": "proposed",
-      "notes": "役割、エージェント構成、Docker作業場と検証計画を用意する。"
+      "notes": "ロールのユーザー構成とDocker作業場・検証計画を作成する。自分も他と同じロールコンテナで働く。"
     },
     {
-      "id": "docker",
-      "parent": "inner",
+      "id": "people-docker",
       "kind": "daemon",
-      "label": "ロール専用Docker daemon",
+      "parent": "people-container",
+      "label": "人事専用DinD",
       "status": "proposed",
-      "notes": "ホストのDocker socketは共有しない想定。"
+      "notes": "ロール内のビルドとテストに使用する専用daemon。ソケット・状態・イメージを他のロールと共有しない設計案。"
     },
     {
-      "id": "config",
-      "parent": "host",
+      "id": "people-config",
       "kind": "config",
+      "parent": "people-container",
       "label": "人事のユーザー構成",
       "status": "proposed",
       "refs": [
-        "roles/role-designer/agent-config/config.toml",
-        "roles/role-designer/agent-config/AGENTS.md",
-        "roles/role-designer/agent-config/skills/"
-      ],
-      "notes": "Customizerの生成物。編集用JSONをruntimeに解釈させない。"
+        "roles/people/agent-config/config.toml",
+        "roles/people/agent-config/AGENTS.md",
+        "roles/people/agent-config/skills/"
+      ]
     },
     {
-      "id": "workspace",
-      "parent": "host",
+      "id": "builder-container",
+      "kind": "container",
+      "parent": "runtime",
+      "label": "実装担当のロール環境",
+      "status": "proposed",
+      "refs": [
+        "roles/builder/compose.yaml"
+      ],
+      "notes": "専用のユーザー構成・作業領域・DinD daemonを持つ。並列実行時のCPU/メモリ・権限・通信は実証して確定。"
+    },
+    {
+      "id": "builder",
+      "kind": "role",
+      "parent": "builder-container",
+      "label": "実装担当",
+      "status": "proposed",
+      "notes": "割り当てられた案件を実装し、専用Dockerでビルドと検証を行う。"
+    },
+    {
+      "id": "builder-docker",
+      "kind": "daemon",
+      "parent": "builder-container",
+      "label": "実装担当専用DinD",
+      "status": "proposed",
+      "notes": "ロール内のビルドとテストに使用する専用daemon。ソケット・状態・イメージを他のロールと共有しない設計案。"
+    },
+    {
+      "id": "builder-config",
+      "kind": "config",
+      "parent": "builder-container",
+      "label": "実装担当のユーザー構成",
+      "status": "proposed",
+      "refs": [
+        "roles/builder/agent-config/config.toml",
+        "roles/builder/agent-config/AGENTS.md",
+        "roles/builder/agent-config/skills/"
+      ]
+    },
+    {
+      "id": "reviewer-container",
+      "kind": "container",
+      "parent": "runtime",
+      "label": "レビュー担当のロール環境",
+      "status": "proposed",
+      "refs": [
+        "roles/reviewer/compose.yaml"
+      ],
+      "notes": "専用のユーザー構成・作業領域・DinD daemonを持つ。並列実行時のCPU/メモリ・権限・通信は実証して確定。"
+    },
+    {
+      "id": "reviewer",
+      "kind": "role",
+      "parent": "reviewer-container",
+      "label": "レビュー担当",
+      "status": "proposed",
+      "notes": "対象のコピーを独立して検証し、根拠のあるレビューを返す。"
+    },
+    {
+      "id": "reviewer-docker",
+      "kind": "daemon",
+      "parent": "reviewer-container",
+      "label": "レビュー担当専用DinD",
+      "status": "proposed",
+      "notes": "ロール内のビルドとテストに使用する専用daemon。ソケット・状態・イメージを他のロールと共有しない設計案。"
+    },
+    {
+      "id": "reviewer-config",
+      "kind": "config",
+      "parent": "reviewer-container",
+      "label": "レビュー担当のユーザー構成",
+      "status": "proposed",
+      "refs": [
+        "roles/reviewer/agent-config/config.toml",
+        "roles/reviewer/agent-config/AGENTS.md",
+        "roles/reviewer/agent-config/skills/"
+      ]
+    },
+    {
+      "id": "catalog",
       "kind": "workspace",
-      "label": "ロール定義・作業場構成",
+      "parent": "host",
+      "label": "ロール定義カタログ",
       "status": "proposed",
       "refs": [
         "roles/"
       ],
-      "notes": "GitHubへ保存する定義。秘密情報と実行履歴は含めない。"
+      "notes": "人事が定義を提案し、検証された版をruntimeが利用する。人事自身がホストのdaemonや起動権限を自由に変更するものではない。"
     }
   ],
   "links": [
     {
-      "id": "manage",
-      "from": "runtime",
-      "to": "inner",
-      "kind": "manages",
-      "label": "起動・停止の管理",
-      "status": "proposed",
-      "notes": "起動方法は未実装。入れ子SBXの成立性も未確認。"
-    },
-    {
-      "id": "agent-config",
-      "from": "people",
-      "to": "config",
-      "kind": "config",
-      "label": "ユーザー構成を利用",
+      "id": "people-launch",
+      "kind": "docker",
+      "from": "runtime-docker",
+      "to": "people-container",
+      "label": "同列の作業場として起動",
       "status": "proposed"
     },
     {
-      "id": "workspace-mount",
-      "from": "role-container",
-      "to": "workspace",
-      "kind": "mount",
-      "access": "rw",
-      "target": "/workspace",
-      "label": "ロールを作成・更新",
-      "status": "proposed",
-      "refs": [
-        "roles/role-designer/compose.yaml"
-      ]
+      "id": "people-config-use",
+      "kind": "config",
+      "from": "people",
+      "to": "people-config",
+      "label": "役割別の設定を利用",
+      "status": "proposed"
     },
     {
-      "id": "daemon-access",
-      "from": "people",
-      "to": "docker",
+      "id": "people-build",
       "kind": "docker",
-      "label": "イメージ構築・検証",
+      "from": "people",
+      "to": "people-docker",
+      "label": "専用daemonで構築・検証",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-launch",
+      "kind": "docker",
+      "from": "runtime-docker",
+      "to": "builder-container",
+      "label": "同列の作業場として起動",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-config-use",
+      "kind": "config",
+      "from": "builder",
+      "to": "builder-config",
+      "label": "役割別の設定を利用",
+      "status": "proposed"
+    },
+    {
+      "id": "builder-build",
+      "kind": "docker",
+      "from": "builder",
+      "to": "builder-docker",
+      "label": "専用daemonで構築・検証",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-launch",
+      "kind": "docker",
+      "from": "runtime-docker",
+      "to": "reviewer-container",
+      "label": "同列の作業場として起動",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-config-use",
+      "kind": "config",
+      "from": "reviewer",
+      "to": "reviewer-config",
+      "label": "役割別の設定を利用",
+      "status": "proposed"
+    },
+    {
+      "id": "reviewer-build",
+      "kind": "docker",
+      "from": "reviewer",
+      "to": "reviewer-docker",
+      "label": "専用daemonで構築・検証",
+      "status": "proposed"
+    },
+    {
+      "id": "people-output",
+      "kind": "mount",
+      "from": "people-container",
+      "to": "catalog",
+      "access": "rw",
+      "target": "/workspace/roles",
+      "label": "ロールと作業場の定義を作成",
+      "status": "proposed"
+    },
+    {
+      "id": "runtime-catalog",
+      "kind": "mount",
+      "from": "runtime",
+      "to": "catalog",
+      "access": "ro",
+      "target": "/opt/role-catalog",
+      "label": "採用済み構成を利用",
       "status": "proposed"
     }
   ]

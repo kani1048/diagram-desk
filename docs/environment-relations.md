@@ -1,8 +1,12 @@
 # ロール環境の関係図
 
 `.environment.json` を登録済みリポジトリに置くと、図の一覧に表示します。
-`examples/role-designer.environment.json` は、人事ロールが役割とDocker作業場を
-設計する構成の合成サンプルです。二段SBXは設計案で、動作確認済みではありません。
+`examples/role-designer.environment.json` は、共通SBX内のruntime Dockerに
+人事・実装担当・レビュー担当のロールコンテナを同列に配置し、各ロールが専用DinDを
+持つ設計案です。人事もロールの一つで、ロールと作業場の定義を作成します。
+ロールの起動・再接続はruntimeの責任です。ロール間はコンテナ境界であり、独立VMではありません。
+並列起動、DinDの権限・資源・マウントの分離は未検証です。
+従来の二段SBX案は `examples/nested-sbx.environment.json` に比較用として残します。
 
 役割やDocker構成を編集する別の管理画面は追加しません。設定の正本は
 Customizerの出力、Dockerfile、compose.yaml、SBXの環境定義に置きます。

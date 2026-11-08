@@ -10,7 +10,7 @@ import { rendererFor } from '../public/renderers/index.mjs';
 import { diagramMetadata } from '../shared/diagram-formats.mjs';
 import { Desk } from '../src/application/desk.mjs';
 import { FileCatalog, GitRepositories, JsonRegistry } from '../src/infrastructure/filesystem.mjs';
-const sample = JSON.parse(await readFile(new URL('../examples/role-designer.environment.json', import.meta.url), 'utf8'));
+const sample = JSON.parse(await readFile(new URL('../examples/nested-sbx.environment.json', import.meta.url), 'utf8'));
 const parse = model => parseEnvironment(JSON.stringify(model));
 const render = (model, state = {}, mode = 'detail', id = 'test') => environmentRenderer.render(JSON.stringify(model), { id, state, mode });
 
