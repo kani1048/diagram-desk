@@ -30,3 +30,10 @@ Validation completed:
 Docker/SBX discovery/execution and standard-config import remain out of scope.
 The nested SBX example is explicitly a proposal, not an executed environment.
 Central CI/review status is checked after marking the PR ready.
+
+## Follow-up: parallel roles with DinD
+Treat HR as a peer of implementation and review. Add a proposed shared-SBX
+runtime with parallel role containers, each owning a dedicated Docker daemon
+and user configuration. Keep the prior nested-SBX example for comparison.
+Validate both samples with the existing model/layout tests, build and preview.
+This changes diagrams only; no daemon or container privileges are provisioned.
