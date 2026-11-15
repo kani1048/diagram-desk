@@ -8,7 +8,8 @@ Diagram Desk は、Mermaid を広い用途の入口とし、Onion など専門�
 書式・検証・描画を形式ごとのモジュールとしてリポジトリ内にまとめ、共通の閲覧機能へ接続する。
 独自形式も元ソースを基本の入力とし、利用者による SVG の事前生成は要求しない。
 本書はこの責務分担を採用する設計方針である。「現行」と明記した契約以外の追加機能は未実装。
-この変更は文書のみで、描画モジュールの移動や既存編集機能の変更は含まない。
+形式ごとの入口、Onion の公開 Schema と共通検証、CLI の validate/show/formats/schema は実装済み。
+VPD の接続、ソース参照を返す表示契約、表示版の追跡は今後の範囲とする。
 
 優先する確認の流れ:
 
@@ -39,15 +40,18 @@ Diagram Desk の共通部が担当する検証はパス、アクセス範囲、�
 
 ## 現行の構成と契約
 
-main の対応形式は Mermaid (`.mmd`) と Onion (`.onion.json`)。
+対応形式は Mermaid (`.mmd`) と Onion (`.onion.json`)。
 VPD は未接続で、`vpd-tools` が独自の Web キャンバスと保存処理を持つ。
 
 | 入口 | 現行の役割 |
 | --- | --- |
-| [shared/diagram-formats.mjs](../shared/diagram-formats.mjs) | 形式 ID・拡張子・ラベル・種類、共通のパス検証 |
+| [shared/diagram-formats.mjs](../shared/diagram-formats.mjs) | 形式登録の参照、共通のパス検証とメタデータ |
 | [public/renderers/index.mjs](../public/renderers/index.mjs) | パスから描画アダプターを選ぶ |
-| [public/renderers/onion-model.mjs](../public/renderers/onion-model.mjs) | Onion のモデル検証と配置 |
-| [public/renderers/onion.mjs](../public/renderers/onion.mjs) | Onion の SVG・選択・詳細表示 |
+| [formats/index.mjs](../formats/index.mjs) | 形式定義・検証・描画入口の共通登録 |
+| [formats/onion/validation.mjs](../formats/onion/validation.mjs) | Schema と参照の検証、CLI と描画で共用する診断 |
+| [formats/onion/model.mjs](../formats/onion/model.mjs) | 検証済みモデルの正規化 |
+| [formats/onion/layout.mjs](../formats/onion/layout.mjs) | Onion の配置 |
+| [formats/onion/renderer.mjs](../formats/onion/renderer.mjs) | Onion の SVG・選択・詳細表示 |
 | [public/viewer.mjs](../public/viewer.mjs) | ソース取得・更新反映・描画呼び出し・編集と保存 |
 | [public/diagram-previews.mjs](../public/diagram-previews.mjs) | 形式を問わずサムネイルを描画・キャッシュ |
 | [public/canvas-viewport.mjs](../public/canvas-viewport.mjs) | SVG のパン・ズーム・全体表示 |
@@ -55,9 +59,10 @@ VPD は未接続で、`vpd-tools` が独自の Web キャンバスと保存処�
 既存の描画アダプター契約:
 
 ```js
-// 形式ごとのアダプター。source は単一ファイルの全文文字列。
+// 共通の描画入口。source は単一ファイルの全文文字列。
 {
   id,
+  async ready(), // 描画器と形式側の CSS を準備してから下記を呼ぶ
   createState(),
   highlight(source),
   async render(source, { id, state, mode }),
@@ -70,7 +75,7 @@ VPD は未接続で、`vpd-tools` が独自の Web キャンバスと保存処�
 - `mode` は `preview` または `detail`。結果は `{ svg, detail? }`。`detail` は詳細表示用 HTML。
 - `highlight()` はエスケープ済みの構文色分け HTML を返す。既存エディター用の契約。
 - `handleEvent()` は現在 click/dblclick を受け、表示状態を変えたときに truthy を返す。ホストが再描画する。
-- 描画に失敗すると例外で通知し、Viewer がメッセージを表示する。構造化した診断はまだ返さない。
+- Onion の不正ソースは構造化した診断を持つ例外で通知し、Viewer が path とメッセージを表示する。CLI は同じ診断を JSON で返す。
 
 現在の取得・保存は単一ファイル単位。詳細表示中のファイル変更をサーバーが定期確認し、SSE で通知する。
 未編集なら新ソースを受け入れて描画し、未保存の編集があれば競合を通知する。
@@ -169,13 +174,13 @@ VPD の台紙、付箋、関連線の描画を Diagram Desk 側にもう一つ�
 
 各段階は独立した変更として進める。
 
-1. **責務と契約を文書化する（本変更）**
+1. **責務と契約を文書化する（完了）**
    現行と目標の違い、外部入力形式と内部表示結果の違いが確認でき、README からたどれる。
-2. **Onion の境界を実装で明確にする**
+2. **Onion の境界を実装で明確にする（実装済み）**
    形式モジュールが Desk の取得・保存・監視に依存せず、渡されたソースから描画できる。
    単独描画、Desk のプレビュー・詳細表示、選択・強調、既存の更新反映を検証する。
    CSS や暗黙のブラウザ依存も調べ、必要な表示資産を公開入口に含める。
-3. **確認用の参照・診断・表示版を整える**
+3. **確認用の参照・診断・表示版を整える（診断を実装、ソース参照と表示版は今後）**
    要素をソースへ対応づけ、不正な更新とその修正を確認できる。
    正常な更新・不正な更新・修正・連続更新で、表示と正本を取り違えないことを検証する。
 4. **VPD を接続する**

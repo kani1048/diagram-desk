@@ -6,7 +6,7 @@ export class Viewer {
     this.serial = 0; this.session = 0; this.dirty = false; this.saving = false; this.conflicted = false;
     this.canvasView = new CanvasViewport(Object.fromEntries(['canvas','graph','code-panel','zoom-level','zoom-in','zoom-out','zoom-reset'].map(id => [id, $(id)])));
     this.renderState = null;
-    $('source').oninput = () => { this.dirty = $('source').value !== this.base; this.status(); this.color(); this.scheduleDraw(); };
+    $('source').oninput = () => { if (!this.renderer) return; this.dirty = $('source').value !== this.base; this.status(); this.color(); this.scheduleDraw(); };
     $('source').onscroll = () => { $('highlight').scrollTop = $('source').scrollTop; $('highlight').scrollLeft = $('source').scrollLeft; };
     $('show-code').onclick = () => this.editor(true); $('close-code').onclick = () => this.editor(false);
     $('save').onclick = () => this.save();
@@ -27,15 +27,15 @@ export class Viewer {
     $('code-panel').hidden = !open; $('show-code').hidden = open;
     if (update) { const url = new URL(location.href); if (open) url.searchParams.set('editor', 'on'); else url.searchParams.delete('editor'); history.replaceState(null, '', url); }
   }
-  close() { $('selection-detail').hidden = true; this.session++; this.serial++; clearTimeout(this.drawTimer); this.events?.close(); this.events = null; this.canvasView.reset(); this.dirty = false; this.saving = false; }
+  close() { this.renderer = null; this.renderState = null; $('source').disabled = true; $('selection-detail').hidden = true; this.session++; this.serial++; clearTimeout(this.drawTimer); this.events?.close(); this.events = null; this.canvasView.reset(); this.dirty = false; this.saving = false; }
   async open(repo, path) {
-    this.close(); const session = this.session; this.repo = repo; this.path = path; this.renderer = this.rendererFor(path); this.renderState = this.renderer.createState(); $('source').setAttribute('aria-label', this.renderer.editorLabel); this.dirty = false; this.saving = false; this.conflicted = false;
+    this.close(); const session = this.session; this.repo = repo; this.path = path; const renderer = this.rendererFor(path); $('source').setAttribute('aria-label', renderer.editorLabel); this.dirty = false; this.saving = false; this.conflicted = false;
     this.editor(new URLSearchParams(location.search).get('editor') === 'on', false);
     $('viewer-error').hidden = true; $('conflict').hidden = true; $('graph').replaceChildren();
     try {
-      const [item, auth] = await Promise.all([this.api(this.endpoint()), this.api('/api/session')]);
+      const [item, auth] = await Promise.all([this.api(this.endpoint()), this.api('/api/session'), renderer.ready()]);
       if (session !== this.session) return;
-      this.token = auth.token; this.accept(item.source);
+      this.renderer = renderer; this.token = auth.token; this.accept(item.source);
       this.events = new EventSource(this.endpoint('events'));
       this.events.onmessage = event => {
         if (session !== this.session) return;
@@ -48,7 +48,7 @@ export class Viewer {
     } catch (error) { if (session === this.session) this.error(error); }
   }
   endpoint(type = 'source') { return `/api/repositories/${this.repo}/${type}?file=${encodeURIComponent(this.path)}`; }
-  accept(source) { this.base = source; $('source').value = source; this.dirty = false; this.conflicted = false; this.pendingExternal = undefined; this.renderState = this.renderer.createState(); $('conflict').hidden = true; this.color(); this.status(); this.scheduleDraw(); this.onSaved(this.repo, this.path, source); }
+  accept(source) { $('source').disabled = false; this.base = source; $('source').value = source; this.dirty = false; this.conflicted = false; this.pendingExternal = undefined; this.renderState = this.renderer.createState(); $('conflict').hidden = true; this.color(); this.status(); this.scheduleDraw(); this.onSaved(this.repo, this.path, source); }
   external(source) {
     if (!this.dirty) { this.accept(source); return; }
     this.conflicted = true; this.pendingExternal = source; $('external-source').textContent = source; $('conflict').hidden = false; this.status();
@@ -56,6 +56,7 @@ export class Viewer {
   async reload() { try { const item = await this.api(this.endpoint()); this.accept(item.source); } catch (error) { this.error(error); } }
   scheduleDraw() { clearTimeout(this.drawTimer); this.drawTimer = setTimeout(() => this.draw(), 100); }
   async draw() {
+    if (!this.renderer) return;
     const serial = ++this.serial;
     try {
       const { svg, detail } = await this.renderer.render($('source').value, { id: 'viewer' + serial, state: this.renderState, mode: 'detail' });

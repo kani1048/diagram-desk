@@ -1,4 +1,4 @@
-import mermaid from '../mermaid.mjs';
+import mermaid from './engine.mjs';
 const escape = text => String(text).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 export function highlight(text) {
   return text.split(/(%%[^\n]*|"[^"\n]*"|\b(?:flowchart|graph|classDiagram|sequenceDiagram|subgraph|end|class|note|participant|actor|direction|style|classDef|linkStyle)\b)/g).map((part, index) => index % 2 ? `<span class="tok-${part.startsWith('%%') ? 'comment' : part.startsWith('"') ? 'string' : 'keyword'}">${escape(part)}</span>` : escape(part)).join('');

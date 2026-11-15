@@ -1,0 +1,24 @@
+@scope (svg[data-kind="diagram"]) {
+.ring-label{fill:#475569;font:700 12px sans-serif;pointer-events:none}
+.ring-label-center{font-size:13px}
+.context-label{fill:#475569;font:700 12px sans-serif}
+.sector-label{fill:#334155;font:700 11px sans-serif;pointer-events:none}
+.sector-line{stroke:#64748b;stroke-width:2;pointer-events:none}
+.sector-fill{stroke:none;opacity:.92}
+.arch-context,.arch-layer,.arch-sector,.arch-edge,.node{cursor:pointer}
+.arch-layer.hot circle{stroke:#e67e22;stroke-width:3}
+.arch-sector.hot .sector-fill{stroke:#e67e22;stroke-width:2.6}
+.arch-sector.hot .sector-line{stroke:#e67e22}
+.arch-edge.hot .edge,.edge.hot{stroke:#e67e22;stroke-width:2.6}
+.node.selected rect,.node.hot rect{stroke:#e67e22;stroke-width:2.8;fill:#fff4e8}
+.node.neighbor rect{stroke:#e67e22;stroke-width:2.4}
+.node.selected text,.node.hot text,.node.neighbor text{fill:#9a3412}
+.edge{fill:none;stroke:#334155;stroke-width:1.5;stroke-dasharray:5 4;pointer-events:stroke}.edge.uses-port{stroke:#111}.edge.implements-port{stroke:#555;stroke-dasharray:2 3}.edge.request,.edge.publish,.edge.subscribe{stroke:#111827;stroke-width:1.7}
+.edge.flow{stroke-dasharray:7 9;animation:edge-flow 1s linear infinite}
+.edge.flow.hot{stroke-dasharray:8 6;animation-duration:.7s;stroke:#e67e22}
+@keyframes edge-flow{to{stroke-dashoffset:-16}}
+@media(prefers-reduced-motion:reduce){.edge.flow{animation:none}}
+.edge-label{font:600 11px ui-monospace,SFMono-Regular,Menlo,monospace;fill:#111827;paint-order:stroke;stroke:#fff;stroke-width:4px;pointer-events:none}
+.edge-label.hot{fill:#e67e22}
+
+}

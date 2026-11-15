@@ -6,6 +6,7 @@ export class DiagramPreviews {
     const key = JSON.stringify([repo, path]);
     const cached = this.cache.get(key);
     if (cached?.source === source && cached.rendererId === renderer.id) return cached.svg;
+    await renderer.ready?.();
     const { svg } = await renderer.render(source, { id, state: renderer.createState(), mode: 'preview' });
     if (this.limit > 0) {
       this.cache.delete(key);

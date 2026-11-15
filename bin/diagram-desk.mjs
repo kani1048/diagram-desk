@@ -1,17 +1,54 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
+import { once } from 'node:events';
 import { createDesk } from '../src/bootstrap.mjs';
 import { serve } from '../src/interfaces/http.mjs';
+import { validateDiagram } from '../src/application/validate-diagram.mjs';
+import { createFileView } from '../src/infrastructure/file-view.mjs';
+import { loadMermaidForValidation } from '../src/infrastructure/mermaid-validation.mjs';
+import { DIAGRAM_FORMATS } from '../formats/index.mjs';
+import { screenUrl } from '../public/routes.mjs';
 const [command, action, ...args] = process.argv.slice(2);
 const desk = createDesk();
+const print = result => console.log(JSON.stringify(result, null, 2));
+async function validateFile(file) {
+  try { return await validateDiagram(file, await readFile(file, 'utf8'), { loadEngine: loadMermaidForValidation }); }
+  catch (error) { return { file, format: null, valid: false, diagnostics: [{ file, severity: 'error', code: 'READ_OR_VALIDATION_ERROR', path: '', message: error.message }] }; }
+}
 try {
   let result;
-  if (command === 'serve') { serve(desk, Number(process.env.PORT || 4310), process.env.HOST || '127.0.0.1'); }
+  if (command === 'validate') {
+    if (!action) throw new Error('diagram-desk validate <file> [file ...]');
+    const results = [];
+    // Mermaid parsing shares an engine; validate sequentially.
+    for (const file of [action, ...args]) results.push(await validateFile(file));
+    result = { valid: results.every(item => item.valid), results };
+    if (!result.valid) process.exitCode = 1;
+  }
+  else if (command === 'formats') result = DIAGRAM_FORMATS.map(({ id, extension, label, documentation, schema }) => ({ id, extension, label, documentation, ...(schema ? { schema } : {}) }));
+  else if (command === 'schema') {
+    const format = DIAGRAM_FORMATS.find(format => format.id === action);
+    if (!format?.schema) throw new Error('この形式には JSON Schema がありません');
+    result = JSON.parse(await readFile(new URL('..' + format.schema, import.meta.url), 'utf8'));
+  }
+  else if (command === 'show') {
+    if (!action || args.length) throw new Error('diagram-desk show <file>');
+    const validation = await validateFile(action);
+    if (!validation.valid) { result = validation; process.exitCode = 1; }
+    else {
+      const view = await createFileView(action);
+      const server = serve(view.desk, Number(process.env.PORT || 4310), process.env.HOST || '127.0.0.1', {
+        onListening: base => print({ file: view.file, format: validation.format, url: base + screenUrl(view.repository.id, view.path) }),
+      });
+      await once(server, 'listening');
+    }
+  }
+  else if (command === 'serve') { const server = serve(desk, Number(process.env.PORT || 4310), process.env.HOST || '127.0.0.1'); await once(server, 'listening'); }
   else if (command === 'repo' && action === 'add') result = await desk.register(args[0], args[1]);
   else if (command === 'repo' && action === 'list') result = await desk.listRepositories();
   else if (command === 'diagram' && action === 'list') result = (await desk.listDiagrams(args[0])).map(({ source, ...item }) => item);
   else if (command === 'diagram' && action === 'save') { const input = JSON.parse(await readFile(args[2], 'utf8')); result = await desk.saveDiagram(args[0], args[1], input.source, input.baseSource); }
   else if (command === 'diagram' && action === 'read') result = await desk.readDiagram(args[0], args[1]);
-  else { console.log('diagram-desk serve | repo add <path> [name] | repo list | diagram list <repo-id> | diagram read <repo-id> <path> | diagram save <repo-id> <path> <json-file>'); if (command) process.exitCode = 1; }
-  if (result !== undefined) console.log(JSON.stringify(result, null, 2));
+  else { console.log('diagram-desk validate <file> [file ...] | show <file> | formats | schema <format-id> | serve | repo add <path> [name] | repo list | diagram list <repo-id> | diagram read <repo-id> <path> | diagram save <repo-id> <path> <json-file>'); if (command) process.exitCode = 1; }
+  if (result !== undefined) print(result);
 } catch (error) { console.error(JSON.stringify({ error: error.message })); process.exitCode = 1; }

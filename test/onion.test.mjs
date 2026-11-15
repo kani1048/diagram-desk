@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { onionRenderer } from '../public/renderers/onion.mjs';
-import { sampleArchitectureModel, sampleContextsModel } from '../public/renderers/onion-model.mjs';
+import { onionRenderer } from '../formats/onion/renderer.mjs';
+import { sampleArchitectureModel, sampleContextsModel } from '../formats/onion/samples.mjs';
 import { rendererFor } from '../public/renderers/index.mjs';
 import { diagramMetadata } from '../shared/diagram-formats.mjs';
 import { screenUrl, parseScreen } from '../public/routes.mjs';

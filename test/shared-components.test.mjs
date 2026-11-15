@@ -4,7 +4,7 @@ import { DiagramPreviews } from '../public/diagram-previews.mjs';
 import { setup } from './viewport-fixture.mjs';
 import { findDiagramFormat, requireDiagramPath, diagramMetadata } from '../shared/diagram-formats.mjs';
 import { describeDiagram, describeDiagramIndex } from '../src/domain/diagram.mjs';
-import { mermaidRenderer } from '../public/renderers/mermaid.mjs';
+import { mermaidRenderer } from '../formats/mermaid/renderer.mjs';
 
 test('ブラウザとドメインで同じ図形式・パス・メタデータを使用する', () => {
   const source = '%% comment\nclassDiagram\nclass User';

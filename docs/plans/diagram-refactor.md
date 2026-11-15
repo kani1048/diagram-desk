@@ -21,4 +21,16 @@ VPD の新規対応、SVG 入力、外部パッケージ化は含めない。
 
 ## 状態
 
-計画。実装前に draft PR #3 へコミットする。
+実装済み。形式の公開入口を `formats/*/format.mjs` と `formats/index.mjs` に集約した。
+Onion の Schema・構造化診断・正規化・配置・描画・CSS を分離し、Mermaid も同じ入口にそろえた。
+CLI に `validate`、`show`、`formats`、`schema` を追加した。
+
+検証結果:
+- Node 22 のコンテナでテスト全体を実行。CLI と描画の診断一致、正常・不正サンプル、単一ファイルの HTTP/SSE、描画器の読み込み競合を確認。
+- 公開 Schema と生成済み検証器の一致を `npm run check:onion-schema` で確認。
+- Docker ビルド成功。開発依存を除いた非 root・読み取り専用環境でも Onion/Mermaid の CLI 検証が成功。
+- 実ブラウザで Mermaid と Onion の一覧・詳細、Onion の選択・強調、参照エラーと修正後の回復、外部更新の自動反映を確認。
+- レビュー用プレビューを `wsl-preview` の7日期限で公開。
+- 文書リンクと差分の空白を確認。
+
+VPD、SVG 入力、要素からソースを開く共通 UI、表示版の追跡は今後の別変更。

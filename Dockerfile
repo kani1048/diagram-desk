@@ -3,7 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npm run build:viewport && npm prune --omit=dev
+RUN npm run build && npm prune --omit=dev
 FROM node:22-alpine
 WORKDIR /app
 COPY --from=build /app /app
