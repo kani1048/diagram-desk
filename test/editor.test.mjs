@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { Desk } from '../src/application/desk.mjs';
 import { JsonRegistry, GitRepositories, FileCatalog } from '../src/infrastructure/filesystem.mjs';
 import { serve } from '../src/interfaces/http.mjs';
-import { frameSource, highlight, wrapNotes } from '../public/renderers/mermaid.mjs';
+import { frameSource, highlight, wrapNotes } from '../formats/mermaid/renderer.mjs';
 test('表示加工はソースを安全に色分けし、任意IDの枠を開閉する', () => {
  assert.ok(!highlight('<script>').includes('<script>'));
  const source = 'flowchart LR\nsubgraph Services[Services]\nA-->B\nend\nServices@{ view: collapsed }';

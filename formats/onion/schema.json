@@ -1,0 +1,264 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Onion Architecture",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^:\\s]+$"
+    },
+    "label": {
+      "type": "string"
+    },
+    "layers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/layer"
+      },
+      "minItems": 1
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/component"
+      },
+      "minItems": 0
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/relation"
+      },
+      "minItems": 0
+    },
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "enum": [
+        "0.1",
+        "0.2"
+      ]
+    },
+    "contexts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/context"
+      },
+      "minItems": 1
+    },
+    "buses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^:\\s]+$"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/relation"
+      },
+      "minItems": 0
+    },
+    "hubContextId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^:\\s]+$"
+    }
+  },
+  "required": [
+    "schemaVersion"
+  ],
+  "additionalProperties": false,
+  "if": {
+    "required": [
+      "contexts"
+    ]
+  },
+  "then": {
+    "not": {
+      "anyOf": [
+        {
+          "required": [
+            "layers"
+          ]
+        },
+        {
+          "required": [
+            "components"
+          ]
+        },
+        {
+          "required": [
+            "relations"
+          ]
+        }
+      ]
+    }
+  },
+  "else": {
+    "required": [
+      "layers",
+      "components"
+    ]
+  },
+  "definitions": {
+    "layer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^:\\s]+$"
+        },
+        "label": {
+          "type": "string"
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "id",
+        "order"
+      ],
+      "additionalProperties": false
+    },
+    "component": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^:\\s]+$"
+        },
+        "label": {
+          "type": "string"
+        },
+        "layerId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string"
+        },
+        "socket": {
+          "enum": [
+            "",
+            "api",
+            "spi"
+          ]
+        },
+        "sector": {
+          "enum": [
+            "presentation",
+            "infrastructure",
+            "test"
+          ]
+        },
+        "groupId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "layerId"
+      ],
+      "additionalProperties": false
+    },
+    "relation": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "minLength": 1
+        },
+        "to": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "depends-on",
+            "uses-port",
+            "implements-port",
+            "runtime-call",
+            "violation",
+            "request",
+            "publish",
+            "subscribe"
+          ]
+        },
+        "source": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^:\\s]+$"
+        },
+        "label": {
+          "type": "string"
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/layer"
+          },
+          "minItems": 1
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/component"
+          },
+          "minItems": 0
+        },
+        "relations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/relation"
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "id",
+        "layers",
+        "components"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

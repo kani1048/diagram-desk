@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mermaidRenderer, frameSource } from '../public/renderers/mermaid.mjs';
+import { mermaidRenderer, frameSource } from '../formats/mermaid/renderer.mjs';
 import { setup } from './viewport-fixture.mjs';
 test('D3は手ぶれとドラッグを区別して、次のクリックを回復する', () => {
  const f=setup(); const {viewport:v,mouse,window}=f; const x=v.x;

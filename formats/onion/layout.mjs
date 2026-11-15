@@ -1,14 +1,5 @@
+import { validateArchitectureModel } from './model.mjs';
 // Adapted from kani1048/agent-harness, pilot/onion-preview, src/onion-preview/domain.mjs.
-const RELATION_KINDS = new Set([
-  "depends-on",
-  "uses-port",
-  "implements-port",
-  "runtime-call",
-  "violation",
-  "request",
-  "publish",
-  "subscribe",
-]);
 /** 処理・通信の向き（from → to）へ破線を流す関係 */
 export const FLOW_KINDS = new Set([
   "depends-on",
@@ -18,14 +9,12 @@ export const FLOW_KINDS = new Set([
   "publish",
   "subscribe",
 ]);
-const SOCKETS = new Set(["", "api", "spi"]);
 // 内→外: 控えめな白黒パターン（SVG defs の id を参照）
 export const LAYER_FILL = [
   "url(#pattern-domain)",
   "url(#pattern-usecase)",
   "url(#pattern-outer)",
 ];
-const SECTOR_IDS = new Set(["presentation", "infrastructure", "test"]);
 export const SECTOR_FILL = {
   presentation: "url(#pattern-sector-presentation)",
   infrastructure: "url(#pattern-sector-infrastructure)",
@@ -135,128 +124,6 @@ export function svgSafeId(raw) {
     .replace(/[^A-Za-z0-9_-]+/g, "-")
     .replace(/^-+|-+$/g, "");
   return value || "item";
-}
-
-export function sampleArchitectureModel() {
-  return {
-    schemaVersion: "0.1",
-    layers: [
-      { id: "domain", label: "Domain", order: 0 },
-      { id: "application", label: "Application", order: 1 },
-      { id: "adapters", label: "Adapters", order: 2 },
-    ],
-    components: [
-      { id: "user", label: "User", layerId: "domain", kind: "entity", groupId: "user" },
-      { id: "create-user", label: "CreateUser", layerId: "application", kind: "usecase", groupId: "user" },
-      {
-        id: "user-repository-port",
-        label: "UserRepository",
-        layerId: "application",
-        kind: "port",
-        socket: "spi",
-        groupId: "user",
-      },
-      {
-        id: "user-api",
-        label: "User API",
-        layerId: "application",
-        kind: "port",
-        socket: "api",
-        groupId: "user",
-      },
-      { id: "sql-user-repository", label: "SqlUserRepository", layerId: "adapters", kind: "adapter", groupId: "user" },
-      { id: "rest-controller", label: "REST", layerId: "adapters", kind: "adapter", groupId: "user" },
-    ],
-    relations: [
-      { from: "rest-controller", to: "user-api", kind: "depends-on", source: "declared" },
-      { from: "user-api", to: "create-user", kind: "uses-port", source: "declared" },
-      { from: "create-user", to: "user", kind: "depends-on", source: "declared" },
-      { from: "create-user", to: "user-repository-port", kind: "uses-port", source: "declared" },
-      { from: "sql-user-repository", to: "user-repository-port", kind: "implements-port", source: "declared" },
-    ],
-  };
-}
-
-export function sampleContextsModel() {
-  return {
-    schemaVersion: "0.2",
-    contexts: [
-      {
-        id: "sales",
-        label: "販売コンテキスト",
-        layers: [
-          { id: "domain", label: "ドメイン層", order: 0 },
-          { id: "usecase", label: "ユースケース層", order: 1 },
-          { id: "outer", label: "外側", order: 2 },
-        ],
-        components: [
-          { id: "order", label: "Order", layerId: "domain", kind: "entity" },
-          { id: "place-order", label: "PlaceOrder", layerId: "usecase", kind: "usecase" },
-          { id: "sales-ui", label: "UI", layerId: "outer", kind: "presentation", sector: "presentation" },
-          { id: "shipping-adapter", label: "Adapter", layerId: "outer", kind: "adapter", sector: "infrastructure" },
-          { id: "event-adapter", label: "Adapter", layerId: "outer", kind: "adapter", sector: "infrastructure" },
-          { id: "sales-test", label: "Test", layerId: "outer", kind: "test", sector: "test" },
-        ],
-        relations: [
-          { from: "place-order", to: "order", kind: "depends-on" },
-          { from: "sales-ui", to: "place-order", kind: "depends-on" },
-          { from: "shipping-adapter", to: "place-order", kind: "depends-on" },
-          { from: "event-adapter", to: "place-order", kind: "depends-on" },
-          { from: "sales-test", to: "place-order", kind: "depends-on" },
-        ],
-      },
-      {
-        id: "delivery",
-        label: "配送コンテキスト",
-        layers: [
-          { id: "domain", label: "ドメイン層", order: 0 },
-          { id: "usecase", label: "ユースケース層", order: 1 },
-          { id: "outer", label: "外側", order: 2 },
-        ],
-        components: [
-          { id: "shipment", label: "Shipment", layerId: "domain", kind: "entity" },
-          { id: "arrange-shipping", label: "ArrangeShipping", layerId: "usecase", kind: "usecase" },
-          { id: "shipping-api", label: "API", layerId: "outer", kind: "port", socket: "api", sector: "presentation" },
-          { id: "shipping-worker", label: "Worker", layerId: "outer", kind: "adapter", sector: "infrastructure" },
-          { id: "delivery-test", label: "Test", layerId: "outer", kind: "test", sector: "test" },
-        ],
-        relations: [
-          { from: "arrange-shipping", to: "shipment", kind: "depends-on" },
-          { from: "shipping-api", to: "arrange-shipping", kind: "uses-port" },
-          { from: "shipping-worker", to: "arrange-shipping", kind: "depends-on" },
-          { from: "delivery-test", to: "arrange-shipping", kind: "depends-on" },
-        ],
-      },
-    ],
-    buses: [{ id: "order-message", label: "Message" }],
-    links: [
-      { from: "sales:shipping-adapter", to: "delivery:shipping-api", kind: "request", label: "Request" },
-      { from: "sales:event-adapter", to: "bus:order-message", kind: "publish", label: "publish" },
-      { from: "delivery:shipping-worker", to: "bus:order-message", kind: "subscribe", label: "subscribe" },
-    ],
-  };
-}
-
-function normalizeSocket(kind, socketRaw) {
-  const socket = String(socketRaw || "").trim().toLowerCase();
-  if (!SOCKETS.has(socket)) throw new Error(`socket が不正です: ${socketRaw}`);
-  if (kind === "port" && !socket) return "spi";
-  return socket;
-}
-
-export function inferSector(component) {
-  const kind = String(component?.kind || "").toLowerCase();
-  const socket = String(component?.socket || "").toLowerCase();
-  if (["presentation", "ui", "controller", "rest"].includes(kind) || socket === "api") return "presentation";
-  if (kind === "test") return "test";
-  return "infrastructure";
-}
-
-export function normalizeSector(component) {
-  const raw = String(component?.sector || "").trim().toLowerCase();
-  if (SECTOR_IDS.has(raw)) return raw;
-  if (raw) throw new Error(`sector が不正です: ${component.sector}`);
-  return inferSector(component);
 }
 
 export function angleInSector(sector, index, count) {
@@ -616,152 +483,6 @@ export function reduceCrossingsByRotation(contextLayouts, allEdges, options = {}
     }
   }
   return bestTotal;
-}
-
-function validateContext(raw, path) {
-  if (!raw || typeof raw !== "object") throw new Error(`${path} が不正です`);
-  const id = String(raw.id || "").trim();
-  if (!id) throw new Error(`${path}.id が必要です`);
-  const layers = Array.isArray(raw.layers) ? raw.layers : null;
-  if (!layers || !layers.length) throw new Error(`${path}.layers が必要です`);
-  const layerIds = new Set();
-  const normalizedLayers = layers.map((layer, index) => {
-    if (!layer || typeof layer !== "object") throw new Error(`${path}.layers[${index}] が不正です`);
-    const layerId = String(layer.id || "").trim();
-    if (!layerId) throw new Error(`${path}.layers[${index}].id が必要です`);
-    if (layerIds.has(layerId)) throw new Error(`layer id が重複しています: ${layerId}`);
-    layerIds.add(layerId);
-    const order = Number(layer.order);
-    if (!Number.isInteger(order) || order < 0) throw new Error(`${path}.layers[${index}].order が不正です`);
-    return { id: layerId, label: String(layer.label || layerId), order };
-  });
-  normalizedLayers.sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
-
-  const components = Array.isArray(raw.components) ? raw.components : null;
-  if (!components) throw new Error(`${path}.components が必要です`);
-  const componentIds = new Set();
-  const normalizedComponents = components.map((component, index) => {
-    if (!component || typeof component !== "object") throw new Error(`${path}.components[${index}] が不正です`);
-    const componentId = String(component.id || "").trim();
-    if (!componentId) throw new Error(`${path}.components[${index}].id が必要です`);
-    if (componentIds.has(componentId)) throw new Error(`component id が重複しています: ${componentId}`);
-    componentIds.add(componentId);
-    const layerId = String(component.layerId || "").trim();
-    if (!layerIds.has(layerId)) throw new Error(`未定義の layerId です: ${layerId}`);
-    const kind = String(component.kind || "component");
-    const socket = normalizeSocket(kind, component.socket);
-    return {
-      id: componentId,
-      label: String(component.label || componentId),
-      layerId,
-      kind,
-      socket,
-      sector: normalizeSector({ ...component, kind, socket }),
-      groupId: component.groupId ? String(component.groupId) : "",
-    };
-  });
-
-  const relations = Array.isArray(raw.relations) ? raw.relations : [];
-  const normalizedRelations = relations.map((relation, index) => {
-    if (!relation || typeof relation !== "object") throw new Error(`${path}.relations[${index}] が不正です`);
-    const from = String(relation.from || "").trim();
-    const to = String(relation.to || "").trim();
-    const kind = String(relation.kind || "").trim();
-    if (!from || !to) throw new Error(`${path}.relations[${index}] に from / to が必要です`);
-    if (!componentIds.has(from)) throw new Error(`${path}.relations[${index}].from が未定義です: ${from}`);
-    if (!componentIds.has(to)) throw new Error(`${path}.relations[${index}].to が未定義です: ${to}`);
-    if (!RELATION_KINDS.has(kind)) throw new Error(`${path}.relations[${index}].kind が不正です: ${kind}`);
-    return { from, to, kind, source: String(relation.source || "declared"), label: String(relation.label || "") };
-  });
-
-  return {
-    id,
-    label: String(raw.label || id),
-    layers: normalizedLayers,
-    components: normalizedComponents,
-    relations: normalizedRelations,
-  };
-}
-
-export function parseArchitectureModel(raw) {
-  let data;
-  try {
-    data = typeof raw === "string" ? JSON.parse(raw) : raw;
-  } catch {
-    throw new Error("JSON として読めません");
-  }
-  return validateArchitectureModel(data);
-}
-
-export function validateArchitectureModel(data) {
-  if (!data || typeof data !== "object" || Array.isArray(data)) {
-    throw new Error("Architecture Model はオブジェクトである必要があります");
-  }
-  const schemaVersion = String(data.schemaVersion || "").trim();
-  if (!schemaVersion) throw new Error("schemaVersion が必要です");
-
-  let contexts;
-  if (Array.isArray(data.contexts) && data.contexts.length) {
-    const ids = new Set();
-    contexts = data.contexts.map((context, index) => {
-      const normalized = validateContext(context, `contexts[${index}]`);
-      if (ids.has(normalized.id)) throw new Error(`context id が重複しています: ${normalized.id}`);
-      ids.add(normalized.id);
-      return normalized;
-    });
-  } else {
-    contexts = [validateContext({ id: "main", label: data.label || "Architecture", ...data }, "model")];
-  }
-
-  const buses = Array.isArray(data.buses)
-    ? data.buses.map((bus, index) => {
-        if (!bus || typeof bus !== "object") throw new Error(`buses[${index}] が不正です`);
-        const id = String(bus.id || "").trim();
-        if (!id) throw new Error(`buses[${index}].id が必要です`);
-        return { id, label: String(bus.label || id) };
-      })
-    : [];
-  const busIds = new Set(buses.map((bus) => bus.id));
-  const endpointOk = (ref) => {
-    if (ref.startsWith("bus:")) return busIds.has(ref.slice(4));
-    const split = ref.indexOf(":");
-    if (split < 1) return false;
-    const contextId = ref.slice(0, split);
-    const componentId = ref.slice(split + 1);
-    const context = contexts.find((item) => item.id === contextId);
-    return Boolean(context && context.components.some((component) => component.id === componentId));
-  };
-
-  const links = Array.isArray(data.links)
-    ? data.links.map((link, index) => {
-        if (!link || typeof link !== "object") throw new Error(`links[${index}] が不正です`);
-        const from = String(link.from || "").trim();
-        const to = String(link.to || "").trim();
-        const kind = String(link.kind || "").trim();
-        if (!from || !to) throw new Error(`links[${index}] に from / to が必要です`);
-        if (!endpointOk(from)) throw new Error(`links[${index}].from が未定義です: ${from}`);
-        if (!endpointOk(to)) throw new Error(`links[${index}].to が未定義です: ${to}`);
-        if (!RELATION_KINDS.has(kind)) throw new Error(`links[${index}].kind が不正です: ${kind}`);
-        return { from, to, kind, label: String(link.label || kind) };
-      })
-    : [];
-
-  const hubContextId = String(data.hubContextId || "").trim();
-  if (hubContextId && !contexts.some((context) => context.id === hubContextId)) {
-    throw new Error(`hubContextId が未定義です: ${hubContextId}`);
-  }
-
-  const primary = contexts[0];
-  return {
-    schemaVersion,
-    contexts,
-    buses,
-    links,
-    hubContextId,
-    layers: primary.layers,
-    components: primary.components,
-    relations: primary.relations,
-  };
 }
 
 function layoutOneContext(context, center, ringGap) {

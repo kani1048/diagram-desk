@@ -29,7 +29,7 @@ CLI は JSON を出力し、失敗時は非ゼロ終了します。登録情報�
 - `infrastructure`: Git 作業ディレクトリの確認、JSON 登録簿、ファイル探索
 - `interfaces`: HTTP と CLI。共通の Desk ユースケースを使用
 
-Repository Registry（登録と識別）と Diagram Catalog（探索と取得）を同一プロセス内のモジュールとして分離しています。図の描画はブラウザの Mermaid に委譲します。architecture.yml を必須にせず、任意の Git リポジトリを対象にします。
+Repository Registry（登録と識別）と Diagram Catalog（探索と取得）を同一プロセス内のモジュールとして分離しています。図の書式・検証・描画は形式ごとのモジュールに委譲します。architecture.yml を必須にせず、任意の Git リポジトリを対象にします。
 
 ## 初期版の範囲
 
@@ -65,16 +65,30 @@ Mermaid は図が必要になった時点で読み込みます。サムネイル
 
 ## 描画形式の共通部品
 
-- `shared/diagram-formats.mjs`: 図形式、拡張子、パス検証、名前・種類。サーバーとブラウザで同じ定義を使用
-- `public/renderers/`: 描画、構文色分け、形式固有の操作。Mermaid の枠開閉や注釈折り返しもここに配置
-- `public/canvas-viewport.mjs`: SVG を対象とするパン・ズーム・全体表示。描画エンジンに依存しない
-- `public/diagram-previews.mjs`: ソース・描画形式に対応する上限付きプレビューキャッシュ
-- `public/viewer.mjs`: 編集・保存・競合検知・変更通知。描画はアダプターへ委譲
+エージェントがソースを編集し、人間が図で確認する用途を中心に、図の内容・図の表現・閲覧の場を分けます。責務、現行の受け渡し契約、今後の移行順は [図の責務と描画の受け渡し](docs/diagram-responsibilities.md) を参照してください。
 
-新しい形式は共通定義と描画アダプターを追加して登録します。一覧探索・URL・HTTP・CLI・保存処理を複製する必要はありません。アダプターは `createState()`、`highlight(source)`、`render(source, { id, state, mode }) -> { svg }`、任意の `handleEvent(...)` を提供します。プレビューと詳細で描画状態を共有せず、返すSVGのIDは引数の `id` を使って衝突を避けます。
+- `formats/`: 形式ごとの書式・検証・配置・描画・CSS。登録は `formats/index.mjs` に集約
+- `shared/diagram-formats.mjs`: 登録済み形式を利用する共通のパス検証とメタデータ
+- `public/renderers/index.mjs`: 対応する描画器と CSS の読み込み、描画契約への接続
+- `public/canvas-viewport.mjs`: SVG のパン・ズーム・全体表示
+- `public/diagram-previews.mjs`: ソース・形式ごとのプレビューキャッシュ
+- `public/viewer.mjs`: 取得・外部更新反映・編集・保存。図固有の処理は形式側へ委譲
 
-Mermaid と Onion Architecture を登録しています。Onion は `examples/sample.onion.json`（単一コンテキスト）と `examples/contexts.onion.json`（複数コンテキストと通信）を参照してください。層・コンポーネント・関係を JSON で定義し、詳細画面で編集・保存できます。要素・層・扇形・通信をクリックすると関連要素の強調と詳細を表示し、背景クリックで解除します。配置・モデル検証・SVG描画は agent-harness の `pilot/onion-preview` を移植し、パン・ズーム・保存・外部変更通知は共通部品を使います。
+新形式の入口と追加手順は [図形式の登録](formats/README.md) を参照してください。
+Mermaid と Onion Architecture に対応しています。Onion の [公開書式](formats/onion/README.md) と [JSON Schema](formats/onion/schema.json) を公開し、CLI と描画で同じ検証処理を使います。
 
+```sh
+node bin/diagram-desk.mjs formats
+node bin/diagram-desk.mjs schema onion
+node bin/diagram-desk.mjs validate examples/sample.onion.json examples/contexts.onion.json
+node bin/diagram-desk.mjs validate examples/architecture.mmd
+node bin/diagram-desk.mjs show examples/sample.onion.json
+```
+
+`validate` は Git 登録なしで指定ファイルを検証します。JSON の `results` にファイルごとの診断（コード・ファイル・JSON Pointer・理由）を返し、どれか不正なら終了コード 1、すべて正常なら 0。
+`show` は指定した1ファイルを表示するローカルサーバーを起動し、開く URL を JSON で返します。外部更新にも追従します。終了は Ctrl+C。`HOST` / `PORT` は通常起動と共通で、ファイルは通常の閲覧と同じく2 MiBまでです。
+
+Onion は `examples/sample.onion.json`（単一コンテキスト）と `examples/contexts.onion.json`（複数コンテキストと通信）を参照してください。要素・層・扇形・通信をクリックすると関連要素の強調と詳細を表示します。配置・SVG 描画は agent-harness の `pilot/onion-preview` 由来です。ソースの型・未知の項目・バージョンは公開書式に従い厳密に検証します。
 キャンバス上の subgraph はダブルクリックで開閉します。パン・ピンチは d3-zoom を使い、4px以上の移動後は選択クリックを抑止します。タッチは1本指パン・2本指パンとピンチ、トラックパッドはスクロールでパン・ピンチでズームします。Safari の Gesture Events はトラックパッド向けに補助し、タッチと同時に処理しません。ダブルタップはMermaidの枠開閉へ渡します。ページ全体の拡大禁止を viewport メタタグへ設定せず、キャンバス内の入力だけを処理します。
 
 ## キャンバス操作の依存

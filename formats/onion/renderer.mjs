@@ -1,4 +1,5 @@
-import { layoutArchitecture, parseArchitectureModel, escapeHtml, svgSafeId, architecturePatternDefs, annularSectorPath, SECTOR_FILL, brokenEdgePaths, FLOW_KINDS } from './onion-model.mjs';
+import { layoutArchitecture, escapeHtml, svgSafeId, architecturePatternDefs, annularSectorPath, SECTOR_FILL, brokenEdgePaths, FLOW_KINDS } from './layout.mjs';
+import { parseArchitectureModel } from './model.mjs';
 export const onionRenderer = {
   id: 'onion',
   createState: () => ({ kind: '', id: '' }),

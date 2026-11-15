@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const compress = promisify(gzip);
 const publicRoot = fileURLToPath(new URL('../../public/', import.meta.url));
 const vendorRoot = fileURLToPath(new URL('../../node_modules/mermaid/dist/', import.meta.url));
-export function serve(desk, port = 4310, host = '127.0.0.1') {
+export function serve(desk, port = 4310, host = '127.0.0.1', { onListening } = {}) {
   const token = randomBytes(32).toString('hex');
   const assets = new Map(); let assetBytes = 0;
   const server = createServer(async (req, res) => {
@@ -56,8 +56,9 @@ export function serve(desk, port = 4310, host = '127.0.0.1') {
       const screen = parseScreen(url.pathname);
       const vendor = url.pathname.startsWith('/vendor/');
       const shared = url.pathname === '/shared/diagram-formats.mjs';
-      const root = shared ? fileURLToPath(new URL('../../shared/', import.meta.url)) : vendor ? vendorRoot : publicRoot;
-      const path = resolve(root, '.' + (shared ? '/diagram-formats.mjs' : vendor ? url.pathname.slice(7) : screen ? '/index.html' : url.pathname));
+      const format = url.pathname.startsWith('/formats/');
+      const root = format ? fileURLToPath(new URL('../../formats/', import.meta.url)) : shared ? fileURLToPath(new URL('../../shared/', import.meta.url)) : vendor ? vendorRoot : publicRoot;
+      const path = resolve(root, '.' + (format ? url.pathname.slice(8) : shared ? '/diagram-formats.mjs' : vendor ? url.pathname.slice(7) : screen ? '/index.html' : url.pathname));
       if (!path.startsWith(resolve(root) + sep)) return send(404, { error: 'Not found' });
       const info = await stat(path);
       const signature = `${info.mtimeMs}:${info.ctimeMs}:${info.size}`;
@@ -71,7 +72,7 @@ export function serve(desk, port = 4310, host = '127.0.0.1') {
         while (assetBytes + bytes > 32 * 1024 * 1024 && assets.size) { const key = assets.keys().next().value; const old = assets.get(key); assetBytes -= old.content.length + (old.zipped?.length || 0); assets.delete(key); }
         if (bytes <= 32 * 1024 * 1024) { assets.set(path, asset); assetBytes += bytes; }
       }
-      const headers = { 'cache-control': 'no-cache', etag: asset.etag, vary: 'Accept-Encoding', 'content-type': path.endsWith('.html') ? 'text/html; charset=utf-8' : path.endsWith('.css') ? 'text/css' : 'text/javascript', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'" };
+      const headers = { 'cache-control': 'no-cache', etag: asset.etag, vary: 'Accept-Encoding', 'content-type': path.endsWith('.html') ? 'text/html; charset=utf-8' : path.endsWith('.css') ? 'text/css' : path.endsWith('.json') ? 'application/json' : path.endsWith('.md') ? 'text/plain; charset=utf-8' : 'text/javascript', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'" };
       if (req.headers['if-none-match']?.split(/,\s*/).includes(asset.etag)) { res.writeHead(304, headers); res.end(); return; }
       const acceptsGzip = String(req.headers['accept-encoding'] || '').split(',').some(part => { const [name, ...options] = part.trim().split(';'); return name === 'gzip' && !options.some(option => /^\s*q=0(?:\.0*)?\s*$/.test(option)); });
       const zipped = acceptsGzip && asset.zipped;
@@ -80,6 +81,9 @@ export function serve(desk, port = 4310, host = '127.0.0.1') {
       res.end(zipped || asset.content);
     } catch (error) { send(error.status || (error.code === 'ENOENT' ? 404 : 400), { error: error.message }); }
   });
-  server.listen(port, host, () => console.log(JSON.stringify({ url: `http://${host}:${server.address().port}` })));
+  server.listen(port, host, () => {
+    const url = `http://${host}:${server.address().port}`;
+    if (onListening) onListening(url); else console.log(JSON.stringify({ url }));
+  });
   return server;
 }
