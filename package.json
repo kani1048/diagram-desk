@@ -11,8 +11,10 @@
     "test": "node --test",
     "build:viewport": "esbuild scripts/viewport-vendor.mjs --bundle --format=esm --minify --outfile=public/lib/viewport.mjs",
     "build:onion-schema": "node scripts/build-onion-schema.mjs",
-    "build": "npm run build:onion-schema && npm run build:viewport",
-    "check:onion-schema": "node scripts/build-onion-schema.mjs --check"
+    "build": "npm run build:onion-schema && npm run build:rule-schemas && npm run build:viewport",
+    "check:onion-schema": "node scripts/build-onion-schema.mjs --check",
+    "build:rule-schemas": "node scripts/build-rule-schemas.mjs",
+    "check:rule-schemas": "node scripts/build-rule-schemas.mjs --check"
   },
   "dependencies": {
     "d3-selection": "3.0.0",

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "0.2",
+  "contexts": [
+    {
+      "id": "sales",
+      "layers": [
+        {
+          "id": "domain",
+          "order": 0
+        }
+      ],
+      "components": [
+        {
+          "id": "order",
+          "layerId": "domain",
+          "kind": "entity"
+        },
+        {
+          "id": "line",
+          "layerId": "domain",
+          "kind": "entity"
+        },
+        {
+          "id": "checkout",
+          "layerId": "domain",
+          "kind": "usecase"
+        }
+      ],
+      "relations": [
+        {
+          "from": "checkout",
+          "to": "order",
+          "kind": "depends-on"
+        },
+        {
+          "from": "order",
+          "to": "line",
+          "kind": "depends-on"
+        }
+      ]
+    },
+    {
+      "id": "delivery",
+      "layers": [
+        {
+          "id": "domain",
+          "order": 0
+        }
+      ],
+      "components": [
+        {
+          "id": "shipment",
+          "layerId": "domain",
+          "kind": "entity"
+        }
+      ]
+    }
+  ],
+  "links": [
+    {
+      "from": "sales:order",
+      "to": "delivery:shipment",
+      "kind": "depends-on"
+    }
+  ]
+}
