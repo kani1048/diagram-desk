@@ -91,6 +91,20 @@ node bin/diagram-desk.mjs show examples/sample.onion.json
 Onion は `examples/sample.onion.json`（単一コンテキスト）と `examples/contexts.onion.json`（複数コンテキストと通信）を参照してください。要素・層・扇形・通信をクリックすると関連要素の強調と詳細を表示します。配置・SVG 描画は agent-harness の `pilot/onion-preview` 由来です。ソースの型・未知の項目・バージョンは公開書式に従い厳密に検証します。
 キャンバス上の subgraph はダブルクリックで開閉します。パン・ピンチは d3-zoom を使い、4px以上の移動後は選択クリックを抑止します。タッチは1本指パン・2本指パンとピンチ、トラックパッドはスクロールでパン・ピンチでズームします。Safari の Gesture Events はトラックパッド向けに補助し、タッチと同時に処理しません。ダブルタップはMermaidの枠開閉へ渡します。ページ全体の拡大禁止を viewport メタタグへ設定せず、キャンバス内の入力だけを処理します。
 
+## 追加の設計ルール検証
+
+書式・参照整合性の検証と、DDD などの設計ルールは独立しています。
+ルールセット側がサポートするアーキテクチャを宣言し、CLI で選択します。未選択時の検証結果は従来どおりです。
+
+```sh
+node bin/diagram-desk.mjs rules
+node bin/diagram-desk.mjs validate examples/ddd.onion.json --rules ddd --rules-config examples/ddd.rules.json
+```
+
+Onion のソースを変更せず、DDD の境界・集約・ルート・参照の意味を別の設定ファイルで宣言します。
+情報不足は違反と区別して incomplete と返し、未対応の形式や未知のルールも明示します。
+契約と拡張方法は [設計ルールセット](validation/README.md)、検証範囲は [DDD ルールセット](validation/rulesets/ddd/README.md) を参照してください。
+
 ## キャンバス操作の依存
 
 `d3-zoom` と `d3-selection` を `scripts/viewport-vendor.mjs` からまとめて配信します。依存更新時は `npm run build:viewport` で `public/lib/viewport.mjs` を再生成してください。Dockerビルドでも再生成します。CDNへの接続は不要です。要素の選択・保存・図の描画は既存アダプターが担当します。

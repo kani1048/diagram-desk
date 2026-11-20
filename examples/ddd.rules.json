@@ -1,0 +1,62 @@
+{
+  "ddd": {
+    "boundedContexts": [
+      {
+        "id": "sales",
+        "architectureContexts": [
+          "sales"
+        ]
+      },
+      {
+        "id": "delivery",
+        "architectureContexts": [
+          "delivery"
+        ]
+      }
+    ],
+    "entities": [
+      "sales:order",
+      "sales:line",
+      "delivery:shipment"
+    ],
+    "aggregates": [
+      {
+        "id": "order",
+        "boundedContextId": "sales",
+        "root": "sales:order",
+        "members": [
+          "sales:order",
+          "sales:line"
+        ]
+      },
+      {
+        "id": "shipment",
+        "boundedContextId": "delivery",
+        "root": "delivery:shipment",
+        "members": [
+          "delivery:shipment"
+        ]
+      }
+    ],
+    "references": [
+      {
+        "relation": "/contexts/0/relations/0",
+        "semantics": "object",
+        "from": "sales:checkout",
+        "to": "sales:order"
+      },
+      {
+        "relation": "/contexts/0/relations/1",
+        "semantics": "object",
+        "from": "sales:order",
+        "to": "sales:line"
+      },
+      {
+        "relation": "/links/0",
+        "semantics": "identity",
+        "from": "sales:order",
+        "to": "delivery:shipment"
+      }
+    ]
+  }
+}
